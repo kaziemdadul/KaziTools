@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prefix/Suffix Tool Pro</title>
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Custom Alert Box -->
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="top-nav">
+        <div class="nav-brand">KAZI TOOLS PRO</div>
+
+        <!-- Hamburger Menu -->
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-item">Card Gen</a>
+            <a href="password.html" class="nav-item">Password Gen</a>
+            <a href="prefix.html" class="nav-item active">Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item">BIN Checker</a>
+        </div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div class="container">
+            <h2>Suffix & Prefix Editor</h2>
+
+            <div class="grid-input">
+                <div>
+                    <label>PREFIX (Added to Start)</label>
+                    <input type="text" id="prefixStr" placeholder="e.g. USER_">
+                </div>
+                <div>
+                    <label>SUFFIX (Added to End)</label>
+                    <input type="text" id="suffixStr" placeholder="e.g. _DONE">
+                </div>
+            </div>
+
+            <label>INPUT DATA (Paste list here)</label>
+            <textarea id="inputText" placeholder="// PASTE YOUR LINES HERE...
+item1
+item2
+item3" style="margin-bottom: 20px;"></textarea>
+
+            <button class="gen-btn" onclick="applyPrefixSuffix()">[ APPLY FIXES ]</button>
+
+            <div id="outputContainer" class="output-container">
+                <div class="output-placeholder" id="placeholderMsg">// RESULTS WAITING...</div>
+            </div>
+            <textarea id="outputHidden" style="display:none;"></textarea>
+
+            <button class="copy-btn" onclick="copyAll()">COPY ALL DATA</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('show');
+        }
+
+        function applyPrefixSuffix() {
+            const prefix = document.getElementById('prefixStr').value;
+            const suffix = document.getElementById('suffixStr').value;
+            const rawInput = document.getElementById('inputText').value;
+
+            const outputContainer = document.getElementById('outputContainer');
+            const outputHidden = document.getElementById('outputHidden');
+
+            if (!rawInput.trim()) {
+                showAlert("PLEASE PASTE INPUT DATA FIRST", true);
+                return;
+            }
+
+            const lines = rawInput.split('\n');
+            outputContainer.innerHTML = '';
+            let allText = "";
+
+            lines.forEach((line) => {
+                // Skip empty lines to keep it clean
+                if (!line.trim()) return;
+
+                const resultLine = `${prefix}${line.trim()}${suffix}`;
+                allText += resultLine + "\n";
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'result-row';
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'result-text';
+                textSpan.innerText = resultLine;
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn-copy-single';
+                copyBtn.innerText = 'COPY';
+                copyBtn.onclick = () => {
+                    copyTextToClipboard(resultLine, true);
+                };
+
+                rowDiv.appendChild(textSpan);
+                rowDiv.appendChild(copyBtn);
+                outputContainer.appendChild(rowDiv);
+            });
+
+            outputHidden.value = allText;
+        }
+    </script>
+</body>
+
+</html>

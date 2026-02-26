@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIN Checker Pro</title>
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .bin-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            display: none;
+        }
+
+        .bin-result.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .bin-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .bin-row:last-child {
+            border-bottom: none;
+        }
+
+        .bin-label {
+            color: #9ca3af;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .bin-value {
+            color: #fff;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-badge.success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--primary);
+            padding: 20px;
+            display: none;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Custom Alert Box -->
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="top-nav">
+        <div class="nav-brand">KAZI TOOLS PRO</div>
+
+        <!-- Hamburger Menu -->
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-item">Card Gen</a>
+            <a href="password.html" class="nav-item">Password Gen</a>
+            <a href="prefix.html" class="nav-item">Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item active">BIN Checker</a>
+        </div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div class="container" style="max-width: 800px;">
+            <h2>BIN Checker Pro (Bulk)</h2>
+
+            <label>ENTER BINS (First 6-8 digits, 1 per line)</label>
+            <textarea id="binLookupInput" placeholder="411111
+453590
+514042" style="height: 120px; margin-bottom: 20px;"></textarea>
+
+            <button class="gen-btn" onclick="checkBulkBin()" id="checkBtn">[ INITIATE BULK LOOKUP ]</button>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading">
+                <span id="progressText">// QUERYING DATABASE: 0 / 0 //</span>
+            </div>
+
+            <!-- Output List Containers (3 Columns) -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 20px;">
+
+                <!-- VALID Section -->
+                <div style="background: #111827; border: 1px solid #22c55e; border-radius: 6px; padding: 10px;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; border-bottom: 1px solid #22c55e; padding-bottom: 10px;">
+                        <span style="color: #22c55e; font-weight: bold;">[ VALID BINS ] <span
+                                id="valCount">0</span></span>
+                        <div style="display:flex; gap: 5px;">
+                            <button class="btn-copy-single" onclick="copyContainer('validContainer', true)"
+                                style="background: #022c22; color:#4ade80; border: 1px solid #16a34a;">COPY ONLY
+                                BINS</button>
+                            <button class="btn-copy-single" onclick="copyContainer('validContainer', false)"
+                                style="background: #166534; color:white;">COPY ALL DATA</button>
+                        </div>
+                    </div>
+                    <div id="validContainer" class="output-container"
+                        style="height: 250px; border:none; padding:0; background: transparent;">
+                        <div class="output-placeholder">// WAITING FOR DATA...</div>
+                    </div>
+                </div>
+
+                <!-- UNKNOWN Section -->
+                <div style="background: #111827; border: 1px solid #eab308; border-radius: 6px; padding: 10px;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; border-bottom: 1px solid #eab308; padding-bottom: 10px;">
+                        <span style="color: #eab308; font-weight: bold;">[ UNKNOWN / NO DATA ] <span
+                                id="unkCount">0</span></span>
+                        <div style="display:flex; gap: 5px;">
+                            <button class="btn-copy-single" onclick="copyContainer('unknownContainer', true)"
+                                style="background: #422006; color:#facc15; border: 1px solid #ca8a04;">COPY ONLY
+                                BINS</button>
+                            <button class="btn-copy-single" onclick="copyContainer('unknownContainer', false)"
+                                style="background: #854d0e; color:white;">COPY ALL DATA</button>
+                        </div>
+                    </div>
+                    <div id="unknownContainer" class="output-container"
+                        style="height: 200px; border:none; padding:0; background: transparent;">
+                        <div class="output-placeholder">// WAITING FOR DATA...</div>
+                    </div>
+                </div>
+
+                <!-- ERROR / FAILED Section -->
+                <div style="background: #111827; border: 1px solid #ef4444; border-radius: 6px; padding: 10px;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; border-bottom: 1px solid #ef4444; padding-bottom: 10px;">
+                        <span style="color: #ef4444; font-weight: bold;">[ FAILED / RATE LIMITED ] <span
+                                id="errCount">0</span></span>
+                        <div style="display:flex; gap: 5px;">
+                            <button class="btn-copy-single" onclick="copyContainer('errorContainer', true)"
+                                style="background: #450a0a; color:#f87171; border: 1px solid #dc2626;">COPY ONLY
+                                BINS</button>
+                            <button class="btn-copy-single" onclick="copyContainer('errorContainer', false)"
+                                style="background: #991b1b; color:white;">COPY ALL DATA</button>
+                        </div>
+                    </div>
+                    <div id="errorContainer" class="output-container"
+                        style="height: 150px; border:none; padding:0; background: transparent;">
+                        <div class="output-placeholder">// WAITING FOR DATA...</div>
+                    </div>
+                </div>
+            </div>
+
+            <textarea id="outputHidden" style="display:none;"></textarea>
+
+            <button class="copy-btn" onclick="copyTextToClipboard(document.getElementById('outputHidden').value, true)"
+                style="margin-top: 20px;">COPY MASTER LIST (ALL)</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('show');
+        }
+
+        // Helper function to delay between requests
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        async function checkBulkBin() {
+            const rawInput = document.getElementById('binLookupInput').value;
+            const loader = document.getElementById('loadingState');
+            const progressText = document.getElementById('progressText');
+
+            const validCont = document.getElementById('validContainer');
+            const unkCont = document.getElementById('unknownContainer');
+            const errCont = document.getElementById('errorContainer');
+            const outputHidden = document.getElementById('outputHidden');
+            const checkBtn = document.getElementById('checkBtn');
+
+            if (!rawInput.trim()) {
+                showAlert("PLEASE PASTE BINs FIRST", true);
+                return;
+            }
+
+            // Extract lines, remove empty, basic clean up (grab first chunk of numbers per line)
+            const lines = rawInput.split('\n')
+                .map(l => l.trim().split(/[^0-9]/)[0]) // Just grab the first block of digits on each line safely
+                .filter(l => l.length >= 6);
+
+            if (lines.length === 0) {
+                showAlert("NO VALID BINs FOUND (Min 6 digits)", true);
+                return;
+            }
+
+            // UI Reset
+            validCont.innerHTML = '';
+            unkCont.innerHTML = '';
+            errCont.innerHTML = '';
+            outputHidden.value = '';
+
+            document.getElementById('valCount').innerText = '0';
+            document.getElementById('unkCount').innerText = '0';
+            document.getElementById('errCount').innerText = '0';
+
+            let allText = "";
+            let vC = 0, uC = 0, eC = 0;
+
+            checkBtn.disabled = true;
+            checkBtn.style.opacity = '0.5';
+            checkBtn.innerText = "[ PROCESSING... ]";
+
+            loader.style.display = 'block';
+
+            for (let i = 0; i < lines.length; i++) {
+                const bin = lines[i];
+                progressText.innerText = `// QUERYING DATABASE: ${i + 1} / ${lines.length} //`;
+
+                let resNetwork = 'UNKNOWN';
+                let resType = 'UNKNOWN';
+                let resLevel = 'UNKNOWN';
+                let resBank = 'UNKNOWN';
+                let resCountry = 'UNKNOWN';
+                let cleanStatusStr = 'FAILED';
+
+                let success = false;
+                let partiallyUnknown = false;
+                let sourcesUsed = [];
+
+                // Array of public APIs to try as fallbacks (Sorted by reliability/lowest rate-limits first)
+                const apis = [
+                    // Very high limit, reliable
+                    `https://data.handyapi.com/bin/${bin}`,
+                    // Backup fallback (more generous limits)
+                    `https://binlist.io/lookup/${bin}/`,
+                    // Excellent data but strictly limits to 5-10 requests per minute
+                    `https://lookup.binlist.net/${bin}`,
+                    // Strict 403 blocks often
+                    `https://bincheck.io/api/${bin}`,
+                    // Last resort (often rejects free keys now)
+                    `https://api.bincodes.com/bin/?format=json&api_key=free&bin=${bin}`
+                ];
+
+                for (let apiIndex = 0; apiIndex < apis.length; apiIndex++) {
+                    const url = apis[apiIndex];
+                    try {
+                        const response = await fetch(url, { headers: { 'Accept-Version': '3' } });
+
+                        if (response.ok) {
+                            const data = await response.json();
+
+                            if (data.status === "error" || data.status === "FAIL" || data.result === "error") {
+                                continue;
+                            }
+
+                            success = true; // We successfully hit AT LEAST ONE API
+
+                            // Map available data
+                            const scheme = data.scheme || data.Scheme || data.card_brand || data.network || data.card || data.vendor;
+                            const type = data.type || data.Type || data.card_type;
+                            const level = data.brand || data.CardTier || data.card_level || data.tier || data.level;
+
+                            let bankName = '';
+                            if (data.bank && data.bank.name) bankName = data.bank.name;
+                            else if (data.bank && data.bank.url && !data.bank.name) bankName = data.bank.url.replace("www.", "").split(".")[0];
+                            else if (data.Issuer && data.Issuer !== "UNKNOWN") bankName = data.Issuer;
+                            else if (data.issuer && data.issuer.name) bankName = data.issuer.name;
+                            else if (data.bank_name) bankName = data.bank_name;
+                            else if (typeof data.bank === 'string') bankName = data.bank;
+
+                            let countryCode = '';
+                            if (data.country && data.country.alpha2) countryCode = data.country.alpha2;
+                            else if (data.country && data.country.name) countryCode = data.country.name;
+                            else if (data.Country && data.Country.A2) countryCode = data.Country.A2;
+                            else if (data.country_iso) countryCode = data.country_iso;
+                            else if (typeof data.country === 'string') countryCode = data.country;
+
+                            // Update our global variables ONLY if they are still 'UNKNOWN' or missing
+                            const urlObj = new URL(url);
+                            const currentApiName = urlObj.hostname.replace('www.', '').replace('api.', '').replace('data.', '').replace('lookup.', '');
+                            let dataAdded = false;
+
+                            if (scheme && resNetwork === 'UNKNOWN') {
+                                resNetwork = scheme.toUpperCase();
+                                dataAdded = true;
+                            }
+                            if (type && resType === 'UNKNOWN') resType = type.toUpperCase();
+                            if (level && resLevel === 'UNKNOWN') resLevel = level.toUpperCase();
+                            if (bankName && resBank === 'UNKNOWN') {
+                                resBank = bankName.toUpperCase();
+                                dataAdded = true;
+                            }
+                            if (countryCode && resCountry === 'UNKNOWN') {
+                                if (countryCode.length > 20) countryCode = countryCode.substring(0, 20);
+                                resCountry = countryCode.toUpperCase();
+                            }
+
+                            // If this API found either the Network or the Bank for the first time, tag it as a source
+                            if (dataAdded && !sourcesUsed.includes(currentApiName)) {
+                                sourcesUsed.push(currentApiName);
+                            }
+
+                            // If we have both Network AND Bank, we consider it a perfect hit and stop hunting
+                            if (resNetwork !== 'UNKNOWN' && resBank !== 'UNKNOWN') {
+                                await delay(800); // Standard quick delay
+                                break;
+                            }
+                        } else {
+                            continue;
+                        }
+                    } catch (error) {
+                        continue;
+                    }
+                    await delay(500); // Fast safety delay between API hops
+                }
+
+                // Loop finished. Evaluate final aggregated data
+                let statusObj = '';
+
+                if (!success) {
+                    // completely crashed or rate limited
+                    resNetwork = 'API ERROR / RATE LIMITED';
+                    resType = '-';
+                    resLevel = '-';
+                    resBank = '-';
+                    resCountry = '-';
+                    cleanStatusStr = 'FAILED';
+                    statusObj = '<span class="status-badge error" style="margin-left:10px;">FAILED</span>';
+                } else if (resBank === 'UNKNOWN' || resNetwork === 'UNKNOWN') {
+                    // APIs connected, but strictly NO complete data found anywhere
+                    cleanStatusStr = 'UNKNOWN';
+                    statusObj = '<span class="status-badge" style="margin-left:10px; background: rgba(234, 179, 8, 0.2); color: #eab308;">UNKNOWN</span>';
+                } else {
+                    // Both Network and Bank were found across the APIs
+                    cleanStatusStr = 'VALID';
+                    statusObj = '<span class="status-badge success" style="margin-left:10px;">VALID</span>';
+                }
+
+                // Add a consistent delay between BIN checks to prevent rate limiting
+                await delay(1000);
+
+                // Format textual string for raw copying
+                const rawFormatLine = `${bin} | ${cleanStatusStr} | ${resNetwork} | ${resType} | ${resLevel} | ${resBank} | ${resCountry}`;
+                allText += rawFormatLine + "\n";
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'result-row';
+                rowDiv.style.flexDirection = 'column';
+                rowDiv.style.alignItems = 'flex-start';
+                rowDiv.style.gap = '5px';
+
+                // Set text data attribute so we can scrape it later with copyContainer()
+                rowDiv.dataset.rawtxt = rawFormatLine;
+
+                // Prepare correct source string for UI
+                let finalSourceText = '';
+                if (cleanStatusStr === 'VALID') {
+                    finalSourceText = `&#8226; Source: ${sourcesUsed.join(' & ')}`;
+                } else if (cleanStatusStr === 'UNKNOWN') {
+                    finalSourceText = `&#8226; Scanned 4 APIs (Bank Data Missing)`;
+                } else {
+                    finalSourceText = `&#8226; Endpoints Blocked / Rate Limited`;
+                }
+
+                const htmlString = `
+                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                        <strong>${bin}</strong> ${statusObj}
+                        <div style="margin-left:auto; display:flex; gap:5px;">
+                            <button class="btn-copy-single" onclick="copyTextToClipboard('${bin}', true)" style="background: transparent; border: 1px solid var(--border); color: #9ca3af;">COPY BIN</button>
+                            <button class="btn-copy-single" onclick="copyTextToClipboard('${rawFormatLine}', true)">COPY FULL</button>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: #9ca3af; margin-top:5px; line-height: 1.5;">
+                        ${resNetwork} | ${resType} | ${resLevel} <br>
+                        Bank: ${resBank} (${resCountry}) 
+                        <br><span style="color: #64748b; font-size: 11px;">${finalSourceText}</span>
+                    </div>
+                `;
+
+                rowDiv.innerHTML = htmlString;
+
+                // Append to correct box
+                if (cleanStatusStr === 'VALID') {
+                    validCont.appendChild(rowDiv);
+                    vC++;
+                    document.getElementById('valCount').innerText = vC;
+                    validCont.scrollTop = validCont.scrollHeight;
+                } else if (cleanStatusStr === 'UNKNOWN') {
+                    unkCont.appendChild(rowDiv);
+                    uC++;
+                    document.getElementById('unkCount').innerText = uC;
+                    unkCont.scrollTop = unkCont.scrollHeight;
+                } else {
+                    errCont.appendChild(rowDiv);
+                    eC++;
+                    document.getElementById('errCount').innerText = eC;
+                    errCont.scrollTop = errCont.scrollHeight;
+                }
+            }
+
+            // Finished
+            outputHidden.value = allText;
+            loader.style.display = 'none';
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+            checkBtn.innerText = "[ INITIATE BULK LOOKUP ]";
+            showAlert("BULK LOOKUP COMPLETED");
+        }
+
+        function copyContainer(containerId, onlyBins = false) {
+            const container = document.getElementById(containerId);
+            const rows = container.getElementsByClassName('result-row');
+            if (rows.length === 0) {
+                showAlert("NO DATA TO COPY IN THIS BOX", true);
+                return;
+            }
+
+            let textToCopy = "";
+            for (let i = 0; i < rows.length; i++) {
+                if (onlyBins) {
+                    // Extract just the first part (the BIN number) from the formatted text before the first |
+                    textToCopy += rows[i].dataset.rawtxt.split('|')[0].trim() + "\n";
+                } else {
+                    textToCopy += rows[i].dataset.rawtxt + "\n";
+                }
+            }
+            copyTextToClipboard(textToCopy, true);
+        }
+    </script>
+</body>
+
+</html>
