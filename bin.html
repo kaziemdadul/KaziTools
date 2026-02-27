@@ -346,8 +346,8 @@
                                 sourcesUsed.push(currentApiName);
                             }
 
-                            // If we have both Network AND Bank, we consider it a perfect hit and stop hunting
-                            if (resNetwork !== 'UNKNOWN' && resBank !== 'UNKNOWN') {
+                            // If we have Bank, we consider it a perfect hit and stop hunting
+                            if (resBank !== 'UNKNOWN') {
                                 await delay(800); // Standard quick delay
                                 break;
                             }
@@ -372,12 +372,12 @@
                     resCountry = '-';
                     cleanStatusStr = 'FAILED';
                     statusObj = '<span class="status-badge error" style="margin-left:10px;">FAILED</span>';
-                } else if (resBank === 'UNKNOWN' || resNetwork === 'UNKNOWN') {
-                    // APIs connected, but strictly NO complete data found anywhere
+                } else if (resBank === 'UNKNOWN') {
+                    // APIs connected, but strictly NO complete bank data found anywhere
                     cleanStatusStr = 'UNKNOWN';
                     statusObj = '<span class="status-badge" style="margin-left:10px; background: rgba(234, 179, 8, 0.2); color: #eab308;">UNKNOWN</span>';
                 } else {
-                    // Both Network and Bank were found across the APIs
+                    // Bank was found across the APIs
                     cleanStatusStr = 'VALID';
                     statusObj = '<span class="status-badge success" style="margin-left:10px;">VALID</span>';
                 }
