@@ -4,20 +4,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DropMail - Premium Temporary Email</title>
-    <meta name="description"
-        content="Secure, fast, and beautiful temporary email service. Protect your privacy with a disposable inbox.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="tempmail.css">
-    <!-- Boxicons for modern, clean icons -->
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Temp Mail - KaziTools PRO</title>
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden {
+            display: none !important;
+        }
+
+        #email-modal.active {
+            display: flex !important;
+        }
+
+        .modal-iframe-wrapper {
+            flex: 1;
+            background: #fff;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-iframe-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
 
 <body>
+
+    <!-- Custom Alert Box -->
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
     <!-- Navigation Header -->
     <nav class="top-nav">
         <div class="nav-brand">KAZI TOOLS PRO</div>
@@ -37,157 +60,92 @@
             <a href="tempmail.html" class="nav-item active">Temp Mail</a>
         </div>
     </nav>
-    <div class="background-effects">
-        <div class="glow glow-1"></div>
-        <div class="glow glow-2"></div>
-        <div class="glow glow-3"></div>
-    </div>
 
-    <div class="app-container">
-        <!-- Header Section -->
-        <header class="header glass-panel">
-            <div class="logo">
-                <i class='bx bx-envelope bg-gradient-icon'></i>
-                <h1>Drop<span>Mail</span></h1>
-            </div>
-            <div class="header-actions">
-                <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme">
-                    <i class='bx bx-moon'></i>
-                </button>
-            </div>
-        </header>
+    <div class="page-wrapper">
+        <div class="container">
+            <h2>Temp Mail</h2>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Hero / Address Section -->
-            <section class="email-section glass-panel">
-                <div class="email-section-header">
-                    <h2>Your Temporary Email Address</h2>
-                    <p>Forget about spam, advertising mailings, and hacking. Keep your real mailbox clean and secure.
-                    </p>
-                </div>
-
-                <div class="custom-email-builder">
-                    <label class="domain-label">Create Custom Address:</label>
-                    <div class="builder-inputs">
-                        <div class="custom-prefix">
-                            <input type="text" id="custom-prefix-input" class="glass-input"
-                                placeholder="Custom name (e.g. hello)" autocomplete="off">
-                        </div>
-                        <span class="at-symbol">@</span>
-                        <div class="custom-select builder-select">
-                            <select id="domain-select" class="glass-select">
-                                <option value="auto">Auto-Select Domain</option>
-                                <!-- Domains will be injected here -->
-                            </select>
-                            <i class='bx bx-chevron-down'></i>
-                        </div>
-                        <button id="create-btn" class="primary-btn tooltip" data-tooltip="Create this address">
-                            <i class='bx bx-plus'></i> <span>Create</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="email-display-container">
-                    <div class="email-loader" id="email-loader">
-                        <div class="spinner"></div>
-                        <span>Generating secure address...</span>
-                    </div>
-                    <div class="email-input-wrapper hidden" id="email-wrapper">
-                        <i class='bx bx-envelope'></i>
-                        <input type="text" id="email-address" readonly value="loading@dropmail.com">
-                        <div class="action-buttons">
-                            <button id="copy-btn" class="primary-btn tooltip" data-tooltip="Copy Address">
-                                <i class='bx bx-copy'></i> <span>Copy</span>
-                            </button>
-                            <button id="refresh-address-btn" class="secondary-btn tooltip"
-                                data-tooltip="Generate Random">
-                                <i class='bx bx-refresh'></i> <span>Random</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="qr-container hidden" id="qr-container">
-                    <button id="toggle-qr" class="text-btn"><i class='bx bx-qr'></i> Show QR Code</button>
-                    <div id="qr-code-wrapper" class="qr-wrapper closed">
-                        <img id="qr-image" src="" alt="QR Code" />
-                    </div>
-                </div>
-            </section>
-
-            <!-- Inbox Section -->
-            <section class="inbox-section glass-panel">
-                <div class="inbox-header">
-                    <div class="inbox-title">
-                        <h3><i class='bx bx-inbox'></i> Inbox</h3>
-                        <span class="badge" id="email-count">0</span>
-                    </div>
-                    <div class="inbox-actions">
-                        <div class="auto-refresh-indicator">
-                            <i class='bx bx-loader-alt bx-spin'></i> Auto-refreshing
-                        </div>
-                        <button id="check-mail-btn" class="icon-btn tooltip" data-tooltip="Check Now">
-                            <i class='bx bx-sync'></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="inbox-content">
-                    <div id="inbox-loader" class="inbox-state hidden">
-                        <div class="spinner"></div>
-                        <p>Checking for emails...</p>
-                    </div>
-
-                    <div id="inbox-empty" class="inbox-state">
-                        <div class="empty-icon">
-                            <i class='bx bx-envelope-open'></i>
-                        </div>
-                        <h4>Your inbox is empty</h4>
-                        <p>Waiting for incoming emails. They will appear here automatically.</p>
-                    </div>
-
-                    <div id="inbox-list" class="email-list hidden">
-                        <!-- Email List Items injected via JS -->
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>&copy; 2026 DropMail. Built with vanilla web tech.</p>
-        </footer>
-    </div>
-
-    <!-- Email Reader Modal -->
-    <div id="email-modal" class="modal">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content glass-panel">
-            <div class="modal-header">
+            <div class="grid-input">
                 <div>
-                    <h3 id="modal-subject">Subject loading...</h3>
-                    <div class="modal-meta">
-                        <span class="meta-item"><i class='bx bx-user'></i> <span id="modal-from">Sender</span></span>
-                        <span class="meta-item"><i class='bx bx-time-five'></i> <span id="modal-date">Date</span></span>
-                    </div>
+                    <label>CUSTOM PREFIX (Optional)</label>
+                    <input type="text" id="custom-prefix-input" placeholder="e.g. hello" autocomplete="off">
                 </div>
-                <button id="close-modal-btn" class="icon-btn close-btn">
-                    <i class='bx bx-x'></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="modal-body-loader" class="modal-loader">
-                    <div class="spinner"></div>
+                <div>
+                    <label>DOMAIN</label>
+                    <select id="domain-select">
+                        <option value="auto">Auto-Select Domain</option>
+                    </select>
                 </div>
-                <!-- Content injected here, carefully sanitized or sandboxed -->
-                <div id="modal-content-frame" class="email-body-content hidden"></div>
             </div>
+
+            <div class="grid-input">
+                <div>
+                    <button class="gen-btn" id="create-btn" style="margin-bottom: 0;">[ CREATE SPECIFIC ]</button>
+                </div>
+                <div>
+                    <button class="gen-btn" id="refresh-address-btn" style="background: #374151; margin-bottom: 0;">[
+                        RANDOM ADDRESS ]</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <label>YOUR EMAIL ADDRESS</label>
+                <div id="email-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="email-address" readonly value="loading@..." style="margin-bottom: 0;">
+                    <button class="btn-copy-single" id="copy-btn" style="padding: 0 20px;">COPY</button>
+                </div>
+            </div>
+
+            <div id="email-loader" class="hidden"
+                style="color: var(--primary); font-size: 14px; margin-bottom: 20px; text-align: center; font-family: 'Consolas', monospace;">
+                // GENERATING SECURE ADDRESS...
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                <label style="margin: 0; color: var(--primary);">INBOX (<span id="email-count">0</span>)</label>
+                <button class="btn-copy-single" id="check-mail-btn"
+                    style="background: transparent; border: 1px solid var(--primary); color: var(--primary);">[ FORCE
+                    CHECK ]</button>
+            </div>
+
+            <div id="outputContainer" class="output-container" style="height: 350px;">
+                <div id="inbox-empty" class="output-placeholder" style="text-align: center; margin-top: 20px;">
+                    // WAITING FOR DATA STREAM...
+                </div>
+                <div id="inbox-loader" class="hidden"
+                    style="color: #64748b; padding: 5px; text-align: center; font-family: 'Consolas', monospace;">//
+                    CHECKING FOR INCOMING TRANSMISSIONS...</div>
+                <div id="inbox-list" class="hidden" style="display: flex; flex-direction: column; gap: 5px;"></div>
+            </div>
+
         </div>
     </div>
 
-    <!-- Toast Notification System -->
-    <div id="toast-container" class="toast-container"></div>
+    <!-- Email Reader Modal -->
+    <div id="email-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.9); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="container"
+            style="max-width: 800px; width: 90%; height: 90%; display: flex; flex-direction: column; position: relative; background: var(--panel); border: 1px solid var(--primary);">
+            <button id="close-modal-btn"
+                style="position: absolute; top: 15px; right: 20px; background: transparent; border: none; color: var(--error); font-size: 20px; cursor: pointer; font-weight: bold; font-family: 'Consolas', monospace;">X</button>
+            <h2 id="modal-subject"
+                style="text-align: left; margin-top: 0; margin-bottom: 10px; font-size: 18px; padding-right: 30px; color: var(--primary);">
+                Subject</h2>
+            <div
+                style="font-size: 13px; color: #9ca3af; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; font-family: 'Consolas', monospace;">
+                <div>FROM: <span id="modal-from" style="color: #fff;"></span></div>
+                <div>DATE: <span id="modal-date" style="color: #fff;"></span></div>
+            </div>
+            <div id="modal-body-loader" class="hidden"
+                style="color: var(--primary); font-family: 'Consolas', monospace; text-align: center; margin-top: 20px;">
+                // LOADING CONTENT...</div>
+            <div id="modal-content-frame" class="modal-iframe-wrapper"></div>
+        </div>
+    </div>
+
+    <!-- Theme toggle dummy to prevent error in JS -->
+    <button id="theme-toggle" class="hidden"></button>
+    <div id="toast-container" class="hidden"></div>
 
     <script src="tempmail.js"></script>
     <script>

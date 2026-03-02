@@ -401,25 +401,24 @@ function updateInboxUI() {
         els.inboxList.innerHTML = '';
         emails.forEach(email => {
             const el = document.createElement('div');
-            el.className = 'email-item';
+            el.className = 'result-row';
 
             // Format time
             const date = new Date(email.createdAt);
             const timeStr = isToday(date)
-                ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
                 : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
             // Sender initial
             const senderName = email.from.name || email.from.address;
-            const senderInitial = (senderName || '?').charAt(0).toUpperCase();
 
             el.innerHTML = `
-                <div class="email-avatar">${senderInitial}</div>
-                <div class="email-preview">
-                    <div class="email-sender">${escapeHTML(senderName)}</div>
-                    <div class="email-subject">${escapeHTML(email.subject || '(No Subject)')}</div>
+                <div class="result-text" style="flex: 1; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <span style="color: var(--primary); font-size: 12px; width: 50px; flex-shrink: 0;">[${timeStr}]</span> 
+                    <span style="color: #fff; flex-shrink: 0; min-width: 80px;">${escapeHTML(senderName).substring(0, 15)}</span>
+                    <span style="color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHTML(email.subject || '(No Subject)')}</span>
                 </div>
-                <div class="email-time">${timeStr}</div>
+                <button class="btn-copy-single">READ</button>
             `;
 
             el.addEventListener('click', () => openEmail(email.id));
@@ -499,7 +498,7 @@ function copyToClipboard(text) {
 
         // Visual feedback on button
         const originalHTML = els.copyBtn.innerHTML;
-        els.copyBtn.innerHTML = "<i class='bx bx-check'></i> <span>Copied</span>";
+        els.copyBtn.innerHTML = "COPIED!";
         setTimeout(() => {
             els.copyBtn.innerHTML = originalHTML;
         }, 2000);
@@ -510,23 +509,25 @@ function copyToClipboard(text) {
 }
 
 function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    const alertBox = document.getElementById('customAlert');
+    if (!alertBox) return; // fallback
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMsg = document.getElementById('alertMsg');
 
-    let icon = 'bx-info-circle';
-    if (type === 'success') icon = 'bx-check-circle';
-    if (type === 'error') icon = 'bx-x-circle';
+    if (type === 'error') {
+        alertBox.classList.add('error');
+        if (alertTitle) alertTitle.textContent = ">> ERROR <<";
+    } else {
+        alertBox.classList.remove('error');
+        if (alertTitle) alertTitle.textContent = ">> SYSTEM ALERT <<";
+    }
 
-    toast.innerHTML = `
-        <i class='bx ${icon}'></i>
-        <span>${escapeHTML(message)}</span>
-    `;
-
-    els.toastContainer.appendChild(toast);
+    if (alertMsg) alertMsg.textContent = message;
+    alertBox.style.display = 'block';
 
     setTimeout(() => {
-        toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 300);
+        alertBox.style.display = 'none';
+        alertBox.classList.remove('error');
     }, 3000);
 }
 
