@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Generator Pro</title>
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Custom Alert Box -->
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="top-nav">
+        <a href="/" class="nav-brand" style="text-decoration: none;">KAZI TOOLS PRO</a>
+
+        <!-- Hamburger Menu -->
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="nav-links" id="navLinks">
+            <a href="/" class="nav-item">Home</a>
+            <a href="cardgen.html" class="nav-item active">Card Gen</a>
+            <a href="password.html" class="nav-item">Password Gen</a>
+            <a href="prefix.html" class="nav-item">Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item">BIN Checker</a>
+            <a href="tempmail.html" class="nav-item">Temp Mail</a>
+        </div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div class="container">
+            <h2>Card Generator</h2>
+
+            <label>BIN / PATTERN (e.g. 4535xxxxxx)</label>
+            <input type="text" id="binInput" placeholder="453590xxxxxxxxxx" maxlength="18">
+
+            <div class="grid-input">
+                <div>
+                    <label>MONTH (Type or Select)</label>
+                    <input type="text" id="monthInput" list="months" placeholder="Random">
+                    <datalist id="months">
+                        <option value="Random">
+                        <option value="01">
+                        <option value="02">
+                        <option value="03">
+                        <option value="04">
+                        <option value="05">
+                        <option value="06">
+                        <option value="07">
+                        <option value="08">
+                        <option value="09">
+                        <option value="10">
+                        <option value="11">
+                        <option value="12">
+                    </datalist>
+                </div>
+                <div>
+                    <label>YEAR (Type or Select)</label>
+                    <input type="text" id="yearInput" list="years" placeholder="Random">
+                    <datalist id="years">
+                        <option value="Random">
+                            <!-- Populated via Script -->
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="grid-input">
+                <div>
+                    <label>QUANTITY</label>
+                    <input type="number" id="quantity" value="20" min="1" max="100">
+                </div>
+                <div>
+                    <label>FORMAT</label>
+                    <select id="formatInput">
+                        <option value="pipe" selected>Pipe ( | )</option>
+                        <option value="colon">Colon ( : )</option>
+                        <option value="csv">Comma ( , )</option>
+                        <option value="slash">Slash ( / )</option>
+                        <option value="space">Space ( )</option>
+                        <option value="sql">SQL Query</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="gen-btn" onclick="generateBulk()">[ INITIATE GENERATION ]</button>
+
+            <div id="outputContainer" class="output-container">
+                <div class="output-placeholder" id="placeholderMsg">// DATA STREAM WAITING...</div>
+            </div>
+            <textarea id="outputHidden" style="display:none;"></textarea>
+
+            <button class="copy-btn" onclick="copyAll()">COPY ALL DATA</button>
+        </div>
+    </div>
+
+    <!-- Link the external JS file -->
+    <script src="script.js"></script>
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('show');
+        }
+    </script>
+</body>
+
+</html>
