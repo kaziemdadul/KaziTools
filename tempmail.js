@@ -53,6 +53,12 @@ const els = {
     copyBodyBtn: document.getElementById('copy-body-btn'),
     extractLinksBtn: document.getElementById('extract-links-btn'),
 
+    // Custom Confirm Modal
+    confirmModal: document.getElementById('confirm-modal'),
+    confirmMessage: document.getElementById('confirm-message'),
+    confirmOkBtn: document.getElementById('confirm-ok-btn'),
+    confirmCancelBtn: document.getElementById('confirm-cancel-btn'),
+
     // Original global ref for later access
     currentMessageCache: null
 };
@@ -423,7 +429,8 @@ async function deleteAccount() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to completely BURN this address (${currentEmail}) and clear the inbox forever?`)) {
+    const confirmed = await showConfirm(`Are you sure you want to completely BURN this address (${currentEmail}) and clear the inbox forever?`);
+    if (!confirmed) {
         return;
     }
 
@@ -584,6 +591,41 @@ function closeModal() {
     els.modal.classList.remove('active');
     document.body.style.overflow = '';
     els.currentMessageCache = null;
+}
+
+// Custom Confirm Logic
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        if (!els.confirmModal || !els.confirmMessage || !els.confirmOkBtn || !els.confirmCancelBtn) {
+            // fallback to native if elements missing for some reason
+            resolve(confirm(message));
+            return;
+        }
+
+        els.confirmMessage.textContent = message;
+        els.confirmModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        const handleOk = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            els.confirmModal.style.display = 'none';
+            document.body.style.overflow = '';
+            els.confirmOkBtn.removeEventListener('click', handleOk);
+            els.confirmCancelBtn.removeEventListener('click', handleCancel);
+        };
+
+        els.confirmOkBtn.addEventListener('click', handleOk);
+        els.confirmCancelBtn.addEventListener('click', handleCancel);
+    });
 }
 
 // Utilities
