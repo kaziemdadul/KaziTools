@@ -1,0 +1,570 @@
+// Configuration
+const APIS = {
+    'mail.tm': 'https://api.mail.tm',
+    'mail.gw': 'https://api.mail.gw'
+};
+const POLL_INTERVAL = 10000; // 10 seconds
+
+// State
+let currentEmail = '';
+let currentToken = '';
+let currentAccountId = '';
+let currentApi = ''; // 'mail.tm' or 'mail.gw'
+let lastAutoApi = ''; // Keep track of last used auto API for round-robin
+let emails = [];
+let availableDomains = []; // Array of objects: { domain: 'example.com', api: 'mail.tm' }
+let pollTimer = null;
+let isDarkTheme = true;
+let isGenerating = false;
+
+// DOM Elements
+const els = {
+    emailAddress: document.getElementById('email-address'),
+    emailLoader: document.getElementById('email-loader'),
+    emailWrapper: document.getElementById('email-wrapper'),
+    copyBtn: document.getElementById('copy-btn'),
+    refreshBtn: document.getElementById('refresh-address-btn'),
+    createBtn: document.getElementById('create-btn'),
+    checkMailBtn: document.getElementById('check-mail-btn'),
+    domainSelect: document.getElementById('domain-select'),
+    customPrefixInput: document.getElementById('custom-prefix-input'),
+
+    inboxEmpty: document.getElementById('inbox-empty'),
+    inboxLoader: document.getElementById('inbox-loader'),
+    inboxList: document.getElementById('inbox-list'),
+    emailCount: document.getElementById('email-count'),
+
+    modal: document.getElementById('email-modal'),
+    closeModalBtn: document.getElementById('close-modal-btn'),
+    modalSubject: document.getElementById('modal-subject'),
+    modalFrom: document.getElementById('modal-from'),
+    modalDate: document.getElementById('modal-date'),
+    modalBodyLoader: document.getElementById('modal-body-loader'),
+    modalContentFrame: document.getElementById('modal-content-frame'),
+
+    themeToggle: document.getElementById('theme-toggle'),
+    toastContainer: document.getElementById('toast-container')
+};
+
+// Initialize App
+async function init() {
+    loadTheme();
+    setupEventListeners();
+    await fetchDomains();
+
+    // mail.tm/mail.gw requires an account (address + password) to access the inbox.
+    // We will save the token in localStorage.
+    const savedToken = localStorage.getItem('dropmail_token');
+    const savedEmail = localStorage.getItem('dropmail_address');
+    const savedAccountId = localStorage.getItem('dropmail_account_id');
+    const savedApi = localStorage.getItem('dropmail_api');
+
+    if (savedToken && savedEmail && savedAccountId && savedApi) {
+        currentToken = savedToken;
+        currentEmail = savedEmail;
+        currentAccountId = savedAccountId;
+        currentApi = savedApi;
+
+        showEmail(currentEmail);
+        fetchMessages();
+        startPolling();
+    } else {
+        await generateNewEmail();
+    }
+}
+
+// Event Listeners
+function setupEventListeners() {
+    els.copyBtn.addEventListener('click', () => copyToClipboard(currentEmail));
+
+    // The main random generate button
+    els.refreshBtn.addEventListener('click', () => {
+        els.customPrefixInput.value = ''; // clear input to force random
+        generateNewEmail();
+    });
+
+    // The specific create button next to the input
+    els.createBtn.addEventListener('click', generateNewEmail);
+
+    // Also support pressing Enter in the input box
+    els.customPrefixInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') generateNewEmail();
+    });
+
+    els.checkMailBtn.addEventListener('click', () => {
+        showToast('Checking for new emails...', 'info');
+        fetchMessages();
+    });
+
+    els.closeModalBtn.addEventListener('click', closeModal);
+    els.modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+
+    els.themeToggle.addEventListener('click', toggleTheme);
+}
+
+// API Functions
+async function fetchDomains() {
+    availableDomains = [];
+
+    // Fetch from all APIS concurrently
+    const apiKeys = Object.keys(APIS);
+
+    try {
+        const fetchPromises = apiKeys.map(async (apiKey) => {
+            try {
+                const response = await fetch(`${APIS[apiKey]}/domains`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const activeDomains = data['hydra:member'].filter(d => d.isActive).map(d => ({
+                        domain: d.domain,
+                        api: apiKey
+                    }));
+                    availableDomains.push(...activeDomains);
+                }
+            } catch (err) {
+                console.warn(`Failed to fetch domains from ${apiKey}`, err);
+            }
+        });
+
+        await Promise.all(fetchPromises);
+
+        if (availableDomains.length === 0) {
+            throw new Error('All APIs failed to return domains');
+        }
+
+        populateDomainDropdown();
+    } catch (error) {
+        console.error('Failed to load domains:', error);
+        showToast('Warning: Could not load domain list', 'error');
+    }
+}
+
+function populateDomainDropdown() {
+    // Keep the "Auto-Select" option, remove the rest
+    while (els.domainSelect.options.length > 1) {
+        els.domainSelect.remove(1);
+    }
+
+    availableDomains.forEach(domainObj => {
+        const option = document.createElement('option');
+        option.value = domainObj.domain;
+        option.textContent = `@${domainObj.domain}`;
+        els.domainSelect.appendChild(option);
+    });
+}
+
+async function generateNewEmail() {
+    if (isGenerating) return;
+    isGenerating = true;
+
+    // Disable buttons
+    if (els.refreshBtn) els.refreshBtn.disabled = true;
+    if (els.createBtn) els.createBtn.disabled = true;
+    if (els.customPrefixInput) els.customPrefixInput.disabled = true;
+
+    stopPolling();
+    els.emailWrapper.classList.add('hidden');
+    els.emailLoader.classList.remove('hidden');
+
+    try {
+        // 1. Get available domains if not fetched
+        if (availableDomains.length === 0) {
+            await fetchDomains();
+        }
+
+        if (availableDomains.length === 0) {
+            throw new Error('All APIs failed to return domains');
+        }
+
+        // 2. Determine credentials
+        let selectedDomain = els.domainSelect.value;
+        let selectedPrefix = els.customPrefixInput.value.trim().toLowerCase();
+        let targetApi = '';
+        let isAutoSelect = false;
+
+        const selectedDomainObj = availableDomains.find(d => d.domain === selectedDomain);
+
+        if (selectedDomain === 'auto' || !selectedDomainObj) {
+            isAutoSelect = true;
+
+            // Round-robin selection between APIs to mitigate rate limits
+            const apiKeys = Object.keys(APIS);
+
+            // Determine the next API to use (flip between mail.tm and mail.gw)
+            if (!lastAutoApi) {
+                lastAutoApi = apiKeys[0];
+            } else {
+                const currentIndex = apiKeys.indexOf(lastAutoApi);
+                lastAutoApi = apiKeys[(currentIndex + 1) % apiKeys.length];
+            }
+            targetApi = lastAutoApi;
+
+            // Pick a random domain belonging to the chosen targetAPI
+            const domainsForTargetApi = availableDomains.filter(d => d.api === targetApi);
+
+            if (domainsForTargetApi.length > 0) {
+                selectedDomain = domainsForTargetApi[Math.floor(Math.random() * domainsForTargetApi.length)].domain;
+            } else {
+                // Fallback if the target API somehow has no domains, just pick any random one
+                const randomDomainObj = availableDomains[Math.floor(Math.random() * availableDomains.length)];
+                selectedDomain = randomDomainObj.domain;
+                targetApi = randomDomainObj.api;
+                lastAutoApi = targetApi;
+            }
+        } else {
+            targetApi = selectedDomainObj.api;
+        }
+
+        // Clean prefix (only letters, numbers, and some basic chars allowed usually)
+        selectedPrefix = selectedPrefix.replace(/[^a-z0-9.-]/g, '');
+
+        if (!selectedPrefix) {
+            // Auto-generate if empty
+            selectedPrefix = Math.random().toString(36).substring(2, 10);
+        }
+
+        let address = `${selectedPrefix}@${selectedDomain}`;
+        const password = Math.random().toString(36).substring(2, 15);
+
+        // 3. Create account
+        let createRes = await fetch(`${APIS[targetApi]}/accounts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, password })
+        });
+
+        // Auto-Retry logic for 429 specific to Auto-Select
+        if (!createRes.ok && createRes.status === 429 && isAutoSelect) {
+            console.warn(`Rate limit hit on ${targetApi}. Falling back to alternate API...`);
+
+            // Swap to the other API
+            const otherApi = Object.keys(APIS).find(api => api !== targetApi) || targetApi;
+
+            if (otherApi !== targetApi) {
+                targetApi = otherApi;
+                lastAutoApi = targetApi; // Update the round-robin tracker
+
+                // Pick a new domain from the new target
+                const altDomains = availableDomains.filter(d => d.api === targetApi);
+                if (altDomains.length > 0) {
+                    address = `${selectedPrefix}@${altDomains[Math.floor(Math.random() * altDomains.length)].domain}`;
+
+                    // Retry fetch exactly once silently
+                    createRes = await fetch(`${APIS[targetApi]}/accounts`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ address, password })
+                    });
+                }
+            }
+        }
+
+        if (!createRes.ok) {
+            if (createRes.status === 429) {
+                throw new Error('Too many requests (rate limit). Please wait a moment.');
+            }
+            const errData = await createRes.json();
+            if (createRes.status === 422 && errData['hydra:description'] && errData['hydra:description'].includes('already')) {
+                throw new Error('This exact email is already taken. Try a different name.');
+            }
+            throw new Error('Failed to create account');
+        }
+
+        const accountData = await createRes.json();
+
+        // 4. Login to get token
+        const tokenRes = await fetch(`${APIS[targetApi]}/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, password })
+        });
+        if (!tokenRes.ok) throw new Error('Failed to get token');
+        const tokenData = await tokenRes.json();
+
+        // 5. Save state
+        currentEmail = address;
+        currentToken = tokenData.token;
+        currentAccountId = accountData.id;
+        currentApi = targetApi;
+
+        localStorage.setItem('dropmail_token', currentToken);
+        localStorage.setItem('dropmail_address', currentEmail);
+        localStorage.setItem('dropmail_account_id', currentAccountId);
+        localStorage.setItem('dropmail_api', currentApi);
+
+        // Reset inbox
+        emails = [];
+        updateInboxUI();
+
+        showEmail(currentEmail);
+        showToast('New email address generated', 'success');
+
+        startPolling();
+    } catch (error) {
+        console.error('Failed to generate email:', error);
+        showToast(error.message || 'Failed to generate email address', 'error');
+        els.emailLoader.classList.add('hidden');
+    } finally {
+        isGenerating = false;
+        if (els.refreshBtn) els.refreshBtn.disabled = false;
+        if (els.createBtn) els.createBtn.disabled = false;
+        if (els.customPrefixInput) els.customPrefixInput.disabled = false;
+    }
+}
+
+async function fetchMessages() {
+    if (!currentToken) return;
+
+    // Auto refresh badge icon spin manually 
+    const spinIcon = document.querySelector('.auto-refresh-indicator i');
+    if (spinIcon) {
+        spinIcon.style.animationDuration = '0.5s';
+        setTimeout(() => spinIcon.style.animationDuration = '2s', 1000);
+    }
+
+    try {
+        const response = await fetch(`${APIS[currentApi]}/messages`, {
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        if (response.status === 401) {
+            // Token expired or invalid, clear and generate new
+            localStorage.removeItem('dropmail_token');
+            localStorage.removeItem('dropmail_address');
+            localStorage.removeItem('dropmail_account_id');
+            localStorage.removeItem('dropmail_api'); // Also remove API
+            await generateNewEmail();
+            return;
+        }
+
+        if (!response.ok) throw new Error('API Error');
+        const data = await response.json();
+        const messages = data['hydra:member'] || [];
+
+        // Check if there are new messages
+        if (messages.length > emails.length && emails.length > 0) {
+            showToast('New email received!', 'success');
+        }
+
+        emails = messages;
+        updateInboxUI();
+    } catch (error) {
+        console.error('Failed to fetch messages:', error);
+    }
+}
+
+async function fetchMessageDetails(id) {
+    if (!currentToken || !currentApi) return null;
+
+    try {
+        const response = await fetch(`${APIS[currentApi]}/messages/${id}`, {
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        if (!response.ok) throw new Error('API Error');
+        return await response.json();
+    } catch (error) {
+        console.error('Failed to fetch message details:', error);
+        showToast('Failed to load message', 'error');
+        return null;
+    }
+}
+
+// Logic Functions
+
+function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(fetchMessages, POLL_INTERVAL);
+}
+
+function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+}
+
+// UI Functions
+function showEmail(email) {
+    els.emailLoader.classList.add('hidden');
+    els.emailAddress.value = email;
+    els.emailWrapper.classList.remove('hidden');
+}
+
+function updateInboxUI() {
+    els.emailCount.textContent = emails.length;
+
+    if (emails.length === 0) {
+        els.inboxEmpty.classList.remove('hidden');
+        els.inboxList.classList.add('hidden');
+    } else {
+        els.inboxEmpty.classList.add('hidden');
+        els.inboxList.classList.remove('hidden');
+
+        // Render list
+        els.inboxList.innerHTML = '';
+        emails.forEach(email => {
+            const el = document.createElement('div');
+            el.className = 'email-item';
+
+            // Format time
+            const date = new Date(email.createdAt);
+            const timeStr = isToday(date)
+                ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+            // Sender initial
+            const senderName = email.from.name || email.from.address;
+            const senderInitial = (senderName || '?').charAt(0).toUpperCase();
+
+            el.innerHTML = `
+                <div class="email-avatar">${senderInitial}</div>
+                <div class="email-preview">
+                    <div class="email-sender">${escapeHTML(senderName)}</div>
+                    <div class="email-subject">${escapeHTML(email.subject || '(No Subject)')}</div>
+                </div>
+                <div class="email-time">${timeStr}</div>
+            `;
+
+            el.addEventListener('click', () => openEmail(email.id));
+            els.inboxList.appendChild(el);
+        });
+    }
+}
+
+async function openEmail(id) {
+    // Open loading modal
+    els.modalSubject.textContent = 'Loading message...';
+    els.modalFrom.textContent = '';
+    els.modalDate.textContent = '';
+    els.modalBodyLoader.classList.remove('hidden');
+    els.modalContentFrame.classList.add('hidden');
+    els.modalContentFrame.innerHTML = '';
+
+    els.modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+    // Fetch details
+    const message = await fetchMessageDetails(id);
+    if (!message) {
+        closeModal();
+        return;
+    }
+
+    els.modalSubject.textContent = message.subject || '(No Subject)';
+    els.modalFrom.textContent = message.from.name ? `${message.from.name} <${message.from.address}>` : message.from.address;
+
+    const date = new Date(message.createdAt);
+    els.modalDate.textContent = date.toLocaleString();
+
+    els.modalBodyLoader.classList.add('hidden');
+    els.modalContentFrame.classList.remove('hidden');
+
+    // Render content safely using an iframe without JS permissions
+    if (message.html) {
+        const iframe = document.createElement('iframe');
+        iframe.sandbox = "allow-same-origin"; // Restrict scripts and popups
+        els.modalContentFrame.appendChild(iframe);
+
+        // Write content to iframe
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        // Inject some basic styling to make emails look okay in dark mode context
+        // OR we can leave the modal-body as white background so emails look normal.
+        // I've styled modal-body with white bg / black text.
+        doc.write(`
+            <style>
+                body { font-family: sans-serif; padding: 10px; word-wrap: break-word; }
+                img { max-width: 100%; height: auto; }
+                a { color: #4f46e5; }
+            </style>
+            ${message.html[0]}
+        `);
+        doc.close();
+    } else {
+        // Plain text fallback
+        const pre = document.createElement('pre');
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.fontFamily = 'inherit';
+        pre.textContent = message.text || '(Empty message)';
+        els.modalContentFrame.appendChild(pre);
+    }
+}
+
+function closeModal() {
+    els.modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Utilities
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Address copied to clipboard!', 'success');
+
+        // Visual feedback on button
+        const originalHTML = els.copyBtn.innerHTML;
+        els.copyBtn.innerHTML = "<i class='bx bx-check'></i> <span>Copied</span>";
+        setTimeout(() => {
+            els.copyBtn.innerHTML = originalHTML;
+        }, 2000);
+    }).catch(err => {
+        console.error('Could not copy text: ', err);
+        showToast('Failed to copy', 'error');
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    let icon = 'bx-info-circle';
+    if (type === 'success') icon = 'bx-check-circle';
+    if (type === 'error') icon = 'bx-x-circle';
+
+    toast.innerHTML = `
+        <i class='bx ${icon}'></i>
+        <span>${escapeHTML(message)}</span>
+    `;
+
+    els.toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function isToday(date) {
+    const today = new Date();
+    return date.getDate() == today.getDate() &&
+        date.getMonth() == today.getMonth() &&
+        date.getFullYear() == today.getFullYear();
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem('dropmail_theme');
+    if (savedTheme === 'light') {
+        isDarkTheme = false;
+        document.body.setAttribute('data-theme', 'light');
+        els.themeToggle.innerHTML = "<i class='bx bx-sun'></i>";
+    }
+}
+
+function toggleTheme() {
+    isDarkTheme = !isDarkTheme;
+    if (isDarkTheme) {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('dropmail_theme', 'dark');
+        els.themeToggle.innerHTML = "<i class='bx bx-moon'></i>";
+    } else {
+        document.body.setAttribute('data-theme', 'light');
+        localStorage.setItem('dropmail_theme', 'light');
+        els.themeToggle.innerHTML = "<i class='bx bx-sun'></i>";
+    }
+}
+
+// Boot the app
+document.addEventListener('DOMContentLoaded', init);

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DropMail - Premium Temporary Email</title>
+    <meta name="description"
+        content="Secure, fast, and beautiful temporary email service. Protect your privacy with a disposable inbox.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="tempmail.css">
+    <!-- Boxicons for modern, clean icons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+
+<body>
+    <!-- Navigation Header -->
+    <nav class="top-nav">
+        <div class="nav-brand">KAZI TOOLS PRO</div>
+
+        <!-- Hamburger Menu -->
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-item">Card Gen</a>
+            <a href="password.html" class="nav-item">Password Gen</a>
+            <a href="prefix.html" class="nav-item">Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item">BIN Checker</a>
+            <a href="tempmail.html" class="nav-item active">Temp Mail</a>
+        </div>
+    </nav>
+    <div class="background-effects">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="header glass-panel">
+            <div class="logo">
+                <i class='bx bx-envelope bg-gradient-icon'></i>
+                <h1>Drop<span>Mail</span></h1>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme">
+                    <i class='bx bx-moon'></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero / Address Section -->
+            <section class="email-section glass-panel">
+                <div class="email-section-header">
+                    <h2>Your Temporary Email Address</h2>
+                    <p>Forget about spam, advertising mailings, and hacking. Keep your real mailbox clean and secure.
+                    </p>
+                </div>
+
+                <div class="custom-email-builder">
+                    <label class="domain-label">Create Custom Address:</label>
+                    <div class="builder-inputs">
+                        <div class="custom-prefix">
+                            <input type="text" id="custom-prefix-input" class="glass-input"
+                                placeholder="Custom name (e.g. hello)" autocomplete="off">
+                        </div>
+                        <span class="at-symbol">@</span>
+                        <div class="custom-select builder-select">
+                            <select id="domain-select" class="glass-select">
+                                <option value="auto">Auto-Select Domain</option>
+                                <!-- Domains will be injected here -->
+                            </select>
+                            <i class='bx bx-chevron-down'></i>
+                        </div>
+                        <button id="create-btn" class="primary-btn tooltip" data-tooltip="Create this address">
+                            <i class='bx bx-plus'></i> <span>Create</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="email-display-container">
+                    <div class="email-loader" id="email-loader">
+                        <div class="spinner"></div>
+                        <span>Generating secure address...</span>
+                    </div>
+                    <div class="email-input-wrapper hidden" id="email-wrapper">
+                        <i class='bx bx-envelope'></i>
+                        <input type="text" id="email-address" readonly value="loading@dropmail.com">
+                        <div class="action-buttons">
+                            <button id="copy-btn" class="primary-btn tooltip" data-tooltip="Copy Address">
+                                <i class='bx bx-copy'></i> <span>Copy</span>
+                            </button>
+                            <button id="refresh-address-btn" class="secondary-btn tooltip"
+                                data-tooltip="Generate Random">
+                                <i class='bx bx-refresh'></i> <span>Random</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="qr-container hidden" id="qr-container">
+                    <button id="toggle-qr" class="text-btn"><i class='bx bx-qr'></i> Show QR Code</button>
+                    <div id="qr-code-wrapper" class="qr-wrapper closed">
+                        <img id="qr-image" src="" alt="QR Code" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inbox Section -->
+            <section class="inbox-section glass-panel">
+                <div class="inbox-header">
+                    <div class="inbox-title">
+                        <h3><i class='bx bx-inbox'></i> Inbox</h3>
+                        <span class="badge" id="email-count">0</span>
+                    </div>
+                    <div class="inbox-actions">
+                        <div class="auto-refresh-indicator">
+                            <i class='bx bx-loader-alt bx-spin'></i> Auto-refreshing
+                        </div>
+                        <button id="check-mail-btn" class="icon-btn tooltip" data-tooltip="Check Now">
+                            <i class='bx bx-sync'></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="inbox-content">
+                    <div id="inbox-loader" class="inbox-state hidden">
+                        <div class="spinner"></div>
+                        <p>Checking for emails...</p>
+                    </div>
+
+                    <div id="inbox-empty" class="inbox-state">
+                        <div class="empty-icon">
+                            <i class='bx bx-envelope-open'></i>
+                        </div>
+                        <h4>Your inbox is empty</h4>
+                        <p>Waiting for incoming emails. They will appear here automatically.</p>
+                    </div>
+
+                    <div id="inbox-list" class="email-list hidden">
+                        <!-- Email List Items injected via JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 DropMail. Built with vanilla web tech.</p>
+        </footer>
+    </div>
+
+    <!-- Email Reader Modal -->
+    <div id="email-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modal-subject">Subject loading...</h3>
+                    <div class="modal-meta">
+                        <span class="meta-item"><i class='bx bx-user'></i> <span id="modal-from">Sender</span></span>
+                        <span class="meta-item"><i class='bx bx-time-five'></i> <span id="modal-date">Date</span></span>
+                    </div>
+                </div>
+                <button id="close-modal-btn" class="icon-btn close-btn">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-body-loader" class="modal-loader">
+                    <div class="spinner"></div>
+                </div>
+                <!-- Content injected here, carefully sanitized or sandboxed -->
+                <div id="modal-content-frame" class="email-body-content hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification System -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="tempmail.js"></script>
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('show');
+        }
+    </script>
+</body>
+
+</html>
