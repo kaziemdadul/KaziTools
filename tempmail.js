@@ -14,6 +14,8 @@ let lastAutoApi = ''; // Keep track of last used auto API for round-robin
 let emails = [];
 let availableDomains = []; // Array of objects: { domain: 'example.com', api: 'mail.tm' }
 let pollTimer = null;
+let countdownTimer = null;
+let countdownSeconds = 10;
 let isDarkTheme = true;
 let isGenerating = false;
 
@@ -43,7 +45,16 @@ const els = {
     modalContentFrame: document.getElementById('modal-content-frame'),
 
     themeToggle: document.getElementById('theme-toggle'),
-    toastContainer: document.getElementById('toast-container')
+    toastContainer: document.getElementById('toast-container'),
+
+    // New Features
+    deleteBtn: document.getElementById('delete-btn'),
+    countdownSpan: document.getElementById('countdown'),
+    copyBodyBtn: document.getElementById('copy-body-btn'),
+    extractLinksBtn: document.getElementById('extract-links-btn'),
+
+    // Original global ref for later access
+    currentMessageCache: null
 };
 
 // Initialize App
@@ -97,6 +108,10 @@ function setupEventListeners() {
     });
 
     els.closeModalBtn.addEventListener('click', closeModal);
+
+    if (els.deleteBtn) els.deleteBtn.addEventListener('click', deleteAccount);
+    if (els.copyBodyBtn) els.copyBodyBtn.addEventListener('click', copyModalBody);
+    if (els.extractLinksBtn) els.extractLinksBtn.addEventListener('click', extractModalLinks);
 
     // Fallback for modal backdrop click
     if (els.modal) {
@@ -321,6 +336,10 @@ async function generateNewEmail() {
 async function fetchMessages() {
     if (!currentToken) return;
 
+    // Reset countdown
+    countdownSeconds = 10;
+    if (els.countdownSpan) els.countdownSpan.textContent = `NEXT CHECK: 10s`;
+
     // Auto refresh badge icon spin manually 
     const spinIcon = document.querySelector('.auto-refresh-indicator i');
     if (spinIcon) {
@@ -379,11 +398,78 @@ async function fetchMessageDetails(id) {
 
 function startPolling() {
     stopPolling();
-    pollTimer = setInterval(fetchMessages, POLL_INTERVAL);
+    // fetch every 10 seconds (10000ms), but we'll manage via a 1-second interval for countdown UI
+    countdownSeconds = 10;
+    if (els.countdownSpan) els.countdownSpan.textContent = `NEXT CHECK: 10s`;
+
+    pollTimer = setInterval(() => {
+        countdownSeconds--;
+        if (countdownSeconds <= 0) {
+            fetchMessages();
+            // fetchMessages will reset countdownSeconds
+        } else {
+            if (els.countdownSpan) els.countdownSpan.textContent = `NEXT CHECK: ${countdownSeconds.toString().padStart(2, '0')}s`;
+        }
+    }, 1000);
 }
 
 function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
+}
+
+async function deleteAccount() {
+    if (!currentToken || !currentAccountId || !currentApi) {
+        showToast("No active account to delete.", "error");
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to completely BURN this address (${currentEmail}) and clear the inbox forever?`)) {
+        return;
+    }
+
+    // Disable button to prevent double-click
+    if (els.deleteBtn) {
+        els.deleteBtn.disabled = true;
+        els.deleteBtn.textContent = "BURNING...";
+    }
+
+    stopPolling();
+
+    try {
+        await fetch(`${APIS[currentApi]}/accounts/${currentAccountId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        showToast(`Address deleted.`, 'success');
+
+        // Clear local storage completely
+        localStorage.removeItem('dropmail_token');
+        localStorage.removeItem('dropmail_address');
+        localStorage.removeItem('dropmail_account_id');
+        localStorage.removeItem('dropmail_api');
+
+        currentEmail = '';
+        currentToken = '';
+        currentAccountId = '';
+
+        // Reset button
+        if (els.deleteBtn) {
+            els.deleteBtn.disabled = false;
+            els.deleteBtn.textContent = "DELETE / BURN";
+        }
+
+        // Auto-generate fresh one immediately
+        await generateNewEmail();
+
+    } catch (err) {
+        console.error("Failed to delete account:", err);
+        showToast("Error deleting account. It may already be removed.", "error");
+        if (els.deleteBtn) {
+            els.deleteBtn.disabled = false;
+            els.deleteBtn.textContent = "DELETE / BURN";
+        }
+    }
 }
 
 // UI Functions
@@ -452,6 +538,8 @@ async function openEmail(id) {
         return;
     }
 
+    els.currentMessageCache = message;
+
     els.modalSubject.textContent = message.subject || '(No Subject)';
     els.modalFrom.textContent = message.from.name ? `${message.from.name} <${message.from.address}>` : message.from.address;
 
@@ -495,9 +583,70 @@ async function openEmail(id) {
 function closeModal() {
     els.modal.classList.remove('active');
     document.body.style.overflow = '';
+    els.currentMessageCache = null;
 }
 
 // Utilities
+
+function copyModalBody() {
+    if (!els.currentMessageCache) return;
+
+    // If there's text, prefer text, otherwise try to strip HTML
+    let textToCopy = els.currentMessageCache.text || '';
+
+    if (!textToCopy && els.currentMessageCache.html) {
+        // Simple HTML strip if no plain text version exists
+        let tmp = document.createElement("DIV");
+        // We can't safely use innerHTML to strip, we'll try a regex hack or rely on textContent if we inject it
+        tmp.innerHTML = els.currentMessageCache.html[0];
+        textToCopy = tmp.textContent || tmp.innerText || "";
+    }
+
+    if (textToCopy.trim().length === 0) {
+        showToast("No text content available to copy.", "error");
+        return;
+    }
+
+    copyToClipboard(textToCopy);
+    if (els.copyBodyBtn) els.copyBodyBtn.textContent = "COPIED!";
+    setTimeout(() => {
+        if (els.copyBodyBtn) els.copyBodyBtn.textContent = "COPY BODY";
+    }, 2000);
+}
+
+function extractModalLinks() {
+    if (!els.currentMessageCache || !els.currentMessageCache.html) {
+        showToast("No HTML content to extract links from.", "error");
+        return;
+    }
+
+    const htmlStr = els.currentMessageCache.html[0];
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlStr, 'text/html');
+    const aTags = doc.querySelectorAll('a');
+
+    if (aTags.length === 0) {
+        showToast("No links found in this message.", "error");
+        return;
+    }
+
+    const links = Array.from(aTags).map(a => a.href).filter(href => href && href.startsWith('http'));
+
+    if (links.length === 0) {
+        showToast("No valid URLs found.", "error");
+        return;
+    }
+
+    // Deduplicate
+    const uniqueLinks = [...new Set(links)];
+    const linksText = uniqueLinks.join('\n');
+
+    copyToClipboard(linksText);
+    if (els.extractLinksBtn) els.extractLinksBtn.textContent = `EXTRACTED ${uniqueLinks.length} LINKS!`;
+    setTimeout(() => {
+        if (els.extractLinksBtn) els.extractLinksBtn.textContent = "EXTRACT LINKS";
+    }, 2000);
+}
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast('Address copied to clipboard!', 'success');
