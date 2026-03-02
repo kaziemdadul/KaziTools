@@ -170,6 +170,33 @@
             const navLinks = document.getElementById('navLinks');
             navLinks.classList.toggle('show');
         }
+
+        // Security: Disable Right Click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Security: Disable Developer Tools Keyboard Shortcuts
+        document.addEventListener('keydown', function (e) {
+            // F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+I / Cmd+Option+I (DevTools)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+J / Cmd+Option+J (Console)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+C / Cmd+Shift+C (Inspect Element)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+            }
+            // Ctrl+U / Cmd+U (View Source)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
 
