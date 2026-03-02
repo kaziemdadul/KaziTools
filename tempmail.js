@@ -97,9 +97,15 @@ function setupEventListeners() {
     });
 
     els.closeModalBtn.addEventListener('click', closeModal);
-    els.modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
 
-    els.themeToggle.addEventListener('click', toggleTheme);
+    // Fallback for modal backdrop click
+    if (els.modal) {
+        els.modal.addEventListener('click', (e) => {
+            if (e.target === els.modal) closeModal();
+        });
+    }
+
+    if (els.themeToggle) els.themeToggle.addEventListener('click', toggleTheme);
 }
 
 // API Functions
