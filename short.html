@@ -175,11 +175,13 @@
                     if (data.shorturl) resultUrl = data.shorturl;
                     else if (data.errormessage) throw new Error(data.errormessage);
                 } else if (provider === 'tinyurl') {
-                    // TinyURL plain text API
-                    apiUrl = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`;
+                    // TinyURL plain text API doesn't support CORS directly, using allorigins proxy
+                    const tinyUrlEndpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`;
+                    apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(tinyUrlEndpoint)}`;
                     const response = await fetch(apiUrl);
-                    if (response.ok) {
-                        resultUrl = await response.text();
+                    const data = await response.json();
+                    if (response.ok && data.contents) {
+                        resultUrl = data.contents;
                     } else {
                         throw new Error("Failed to shorten with TinyURL");
                     }
