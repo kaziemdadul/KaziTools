@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Encoder/Decoder - KaziTools PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon"><i data-feather="link"></i></span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item"><i data-feather="home"></i> Home</a>
+            <a href="cardgen.html" class="nav-item"><i data-feather="credit-card"></i> Card Gen</a>
+            <a href="password.html" class="nav-item"><i data-feather="key"></i> Password Gen</a>
+            <a href="prefix.html" class="nav-item"><i data-feather="hash"></i> Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item"><i data-feather="search"></i> BIN Checker</a>
+            <a href="tempmail.html" class="nav-item"><i data-feather="mail"></i> Temp Mail</a>
+            <a href="json.html" class="nav-item"><i data-feather="code"></i> JSON Formatter</a>
+            <a href="base64.html" class="nav-item"><i data-feather="file-text"></i> Base64</a>
+            <a href="hash.html" class="nav-item"><i data-feather="lock"></i> Hash Gen</a>
+            <a href="url.html" class="nav-item active"><i data-feather="link"></i> URL Tools</a>
+            <a href="ip.html" class="nav-item"><i data-feather="globe"></i> IP Lookup</a>
+            <a href="regex.html" class="nav-item"><i data-feather="terminal"></i> Regex Tester</a>
+            <a href="lorem.html" class="nav-item"><i data-feather="type"></i> Lorem Ipsum</a>
+        </nav>
+    </div>
+    <div class="overlay" id="sidebar-overlay"></div>
+
+    <div class="page-wrapper">
+        <div class="container">
+            <h2>URL Encode & Decode</h2>
+            <label>INPUT URL OR TEXT</label>
+            <textarea id="urlInput" placeholder="https://example.com/search?q=hello world"
+                style="min-height: 120px;"></textarea>
+
+            <div class="grid-input" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <button class="gen-btn" onclick="encodeUrl()" style="margin-bottom: 0;">[ ENCODE URL ]</button>
+                <button class="gen-btn" onclick="decodeUrl()"
+                    style="background: linear-gradient(135deg, #374151, #1e293b); box-shadow: none; margin-bottom: 0;">[
+                    DECODE URL ]</button>
+            </div>
+
+            <label>RESULT</label>
+            <div class="output-container" style="height: 150px; padding: 0;">
+                <textarea id="urlOutput" readonly
+                    style="width: 100%; height: 100%; border: none; background: transparent; color: #a7f3d0; margin: 0; padding: 15px; resize: none;"></textarea>
+            </div>
+            <button class="copy-btn" onclick="copyUrl()">COPY DATA</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function encodeUrl() {
+            const input = document.getElementById('urlInput').value;
+            if (!input) { showAlert('PLEASE ENTER TEXT TO ENCODE', true); return; }
+            document.getElementById('urlOutput').value = encodeURIComponent(input);
+            showAlert('SUCCESSFULLY ENCODED');
+        }
+        function decodeUrl() {
+            const input = document.getElementById('urlInput').value;
+            if (!input) { showAlert('PLEASE ENTER URL TO DECODE', true); return; }
+            try {
+                document.getElementById('urlOutput').value = decodeURIComponent(input);
+                showAlert('SUCCESSFULLY DECODED');
+            } catch (e) {
+                showAlert('INVALID URL ENCODING', true);
+            }
+        }
+        function copyUrl() {
+            const out = document.getElementById('urlOutput').value;
+            if (!out) { showAlert('NO OUTPUT TO COPY', true); return; }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(out).then(() => { showAlert('COPIED!'); }).catch(() => fallbackCopy(out));
+            } else { fallbackCopy(out); }
+        }
+        function fallbackCopy(text) {
+            let temp = document.createElement("textarea"); temp.value = text;
+            document.body.appendChild(temp); temp.select(); document.execCommand("copy");
+            document.body.removeChild(temp); showAlert("COPIED!");
+        }
+    </script>
+</body>
+
+</html>

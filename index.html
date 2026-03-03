@@ -17,7 +17,7 @@
             text-align: center;
             padding: 50px 20px;
             margin-bottom: 30px;
-            position:relative;
+            position: relative;
         }
 
         .hero-title {
@@ -50,7 +50,7 @@
         .tool-card {
             background: rgba(20, 25, 35, 0.6);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 16px;
             padding: 30px 25px;
             text-align: left;
@@ -63,23 +63,27 @@
             position: relative;
             overflow: hidden;
         }
-        
-        .tool-card::before{
-           content: "";
-           position:absolute;
-           top:0;left:0;right:0;height:2px;
-           background: linear-gradient(90deg, transparent, #10b981, transparent);
-           opacity:0;
-           transition: opacity 0.3s;
+
+        .tool-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #10b981, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .tool-card:hover {
             border-color: rgba(16, 185, 129, 0.3);
             transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(16, 185, 129, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.1);
         }
+
         .tool-card:hover::before {
-            opacity: 1; 
+            opacity: 1;
         }
 
         .tool-icon {
@@ -87,8 +91,11 @@
             color: #10b981;
             margin-bottom: 20px;
             background: rgba(16, 185, 129, 0.1);
-            width: 50px; height: 50px;
-            display: flex; justify-content:center; align-items:center;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             border-radius: 12px;
             border: 1px solid rgba(16, 185, 129, 0.2);
             font-family: 'Fira Code', monospace;
@@ -151,6 +158,27 @@
             <a href="tempmail.html" class="nav-item">
                 <i data-feather="mail"></i> Temp Mail
             </a>
+            <a href="json.html" class="nav-item">
+                <i data-feather="code"></i> JSON Formatter
+            </a>
+            <a href="base64.html" class="nav-item">
+                <i data-feather="file-text"></i> Base64
+            </a>
+            <a href="hash.html" class="nav-item">
+                <i data-feather="lock"></i> Hash Gen
+            </a>
+            <a href="url.html" class="nav-item">
+                <i data-feather="link"></i> URL Tools
+            </a>
+            <a href="ip.html" class="nav-item">
+                <i data-feather="globe"></i> IP Lookup
+            </a>
+            <a href="regex.html" class="nav-item">
+                <i data-feather="terminal"></i> Regex Tester
+            </a>
+            <a href="lorem.html" class="nav-item">
+                <i data-feather="type"></i> Lorem Ipsum
+            </a>
         </nav>
     </div>
 
@@ -208,6 +236,48 @@
                         <div class="tool-title">Temp Mail</div>
                         <div class="tool-desc">Disposable, secure email inboxes with auto-refresh and account burning.
                         </div>
+                    </a>
+
+                    <a href="json.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">{ }</div>
+                        <div class="tool-title">JSON Formatter</div>
+                        <div class="tool-desc">Format, minify & validate raw JSON.</div>
+                    </a>
+
+                    <a href="base64.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">B64</div>
+                        <div class="tool-title">Base64 Tool</div>
+                        <div class="tool-desc">Encode and decode Base64 strings.</div>
+                    </a>
+
+                    <a href="hash.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">#</div>
+                        <div class="tool-title">Hash Generator</div>
+                        <div class="tool-desc">Create SHA-1, SHA-256 secure hashes.</div>
+                    </a>
+
+                    <a href="url.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">%20</div>
+                        <div class="tool-title">URL Encoder</div>
+                        <div class="tool-desc">Safely encode or decode URL schemes.</div>
+                    </a>
+
+                    <a href="regex.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">/.*</div>
+                        <div class="tool-title">Regex Tester</div>
+                        <div class="tool-desc">Test Regular Expression logic matching.</div>
+                    </a>
+
+                    <a href="ip.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">IP</div>
+                        <div class="tool-title">IP Lookup</div>
+                        <div class="tool-desc">Trace IP Geolocation and ISP context.</div>
+                    </a>
+
+                    <a href="lorem.html" class="tool-card">
+                        <div class="tool-icon" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">Aa</div>
+                        <div class="tool-title">Lorem Ipsum</div>
+                        <div class="tool-desc">Generate dummy paragraph content.</div>
                     </a>
 
                 </div>

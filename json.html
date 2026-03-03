@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Formatter - KaziTools PRO</title>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Custom Alert Box -->
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <!-- Header/Nav -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon">
+                <i data-feather="code"></i>
+            </span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">
+                <i data-feather="home"></i> Home
+            </a>
+            <a href="cardgen.html" class="nav-item">
+                <i data-feather="credit-card"></i> Card Gen
+            </a>
+            <a href="password.html" class="nav-item">
+                <i data-feather="key"></i> Password Gen
+            </a>
+            <a href="prefix.html" class="nav-item">
+                <i data-feather="hash"></i> Suffix & Prefix
+            </a>
+            <a href="bin.html" class="nav-item">
+                <i data-feather="search"></i> BIN Checker
+            </a>
+            <a href="tempmail.html" class="nav-item">
+                <i data-feather="mail"></i> Temp Mail
+            </a>
+            <a href="json.html" class="nav-item active">
+                <i data-feather="code"></i> JSON Formatter
+            </a>
+            <a href="base64.html" class="nav-item">
+                <i data-feather="file-text"></i> Base64
+            </a>
+            <a href="hash.html" class="nav-item">
+                <i data-feather="lock"></i> Hash Gen
+            </a>
+            <a href="url.html" class="nav-item">
+                <i data-feather="link"></i> URL Tools
+            </a>
+            <a href="ip.html" class="nav-item">
+                <i data-feather="globe"></i> IP Lookup
+            </a>
+            <a href="regex.html" class="nav-item">
+                <i data-feather="terminal"></i> Regex Tester
+            </a>
+            <a href="lorem.html" class="nav-item">
+                <i data-feather="type"></i> Lorem Ipsum
+            </a>
+        </nav>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="sidebar-overlay"></div>
+
+    <div class="page-wrapper">
+        <div class="container" style="max-width: 900px;">
+            <h2>JSON Formatter & Validator</h2>
+
+            <div class="grid-input" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Input Side -->
+                <div style="display: flex; flex-direction: column;">
+                    <label>INPUT JSON</label>
+                    <textarea id="jsonInput" placeholder='{"name": "Developer", "tools": ["json", "base64"]}'
+                        style="height: 350px; font-family: 'Fira Code', monospace;"></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="gen-btn" onclick="formatJSON()" style="flex: 1; margin-bottom: 0;">FORMAT
+                            (BEAUTIFY)</button>
+                        <button class="gen-btn" onclick="minifyJSON()"
+                            style="flex: 1; background: #374151; margin-bottom: 0;">MINIFY</button>
+                    </div>
+                </div>
+
+                <!-- Output Side -->
+                <div style="display: flex; flex-direction: column;">
+                    <label>OUTPUT / RESULT</label>
+                    <div id="jsonOutputContainer" class="output-container"
+                        style="flex: 1; height: 350px; padding: 0; position: relative;">
+                        <!-- Using a readonly textarea for output so text is selectable but styled identically to code background -->
+                        <textarea id="jsonOutput" readonly
+                            style="width: 100%; height: 100%; border: none; background: transparent; color: #a7f3d0; margin: 0; padding: 15px; resize: none;"></textarea>
+                    </div>
+                    <button class="copy-btn" onclick="copyJSON()" style="margin-top: 15px;">COPY RESULT</button>
+                </div>
+            </div>
+
+            <div id="jsonError"
+                style="color: var(--error); font-family: 'Fira Code', monospace; font-size: 13px; margin-top: 15px; display: none;">
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function getJson() {
+            const input = document.getElementById('jsonInput').value;
+            if (!input.trim()) {
+                showAlert('PLEASE ENTER JSON DATA', true);
+                return null;
+            }
+            try {
+                const parsed = JSON.parse(input);
+                document.getElementById('jsonError').style.display = 'none';
+                return parsed;
+            } catch (e) {
+                document.getElementById('jsonError').innerText = `>> SYNTAX ERROR:\n${e.message}`;
+                document.getElementById('jsonError').style.display = 'block';
+                document.getElementById('jsonOutput').value = '';
+                showAlert('INVALID JSON FORMAT', true);
+                return null;
+            }
+        }
+
+        function formatJSON() {
+            const data = getJson();
+            if (data) {
+                document.getElementById('jsonOutput').value = JSON.stringify(data, null, 4);
+                showAlert('JSON FORMATTED SUCCESSFULLY');
+            }
+        }
+
+        function minifyJSON() {
+            const data = getJson();
+            if (data) {
+                document.getElementById('jsonOutput').value = JSON.stringify(data);
+                showAlert('JSON MINIFIED SUCCESSFULLY');
+            }
+        }
+
+        function copyJSON() {
+            const out = document.getElementById('jsonOutput').value;
+            if (!out) {
+                showAlert('NO OUTPUT TO COPY', true);
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(out).then(() => {
+                    showAlert('JSON COPIED!');
+                }).catch(() => fallbackCopy(out));
+            } else {
+                fallbackCopy(out);
+            }
+        }
+
+        function fallbackCopy(text) {
+            let temp = document.createElement("textarea");
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showAlert("JSON COPIED!");
+        }
+    </script>
+</body>
+
+</html>

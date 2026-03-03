@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Tester - KaziTools PRO</title>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .regex-highlight {
+            background-color: rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.8);
+            border-radius: 3px;
+            color: #fff;
+        }
+
+        .regex-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 22px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .regex-input-wrapper:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .regex-slash {
+            color: var(--primary);
+            font-weight: bold;
+            font-family: 'Fira Code', monospace;
+            padding: 0 15px;
+            font-size: 18px;
+        }
+
+        .regex-input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-family: 'Fira Code', monospace;
+            font-size: 15px;
+            padding: 14px 0;
+            outline: none;
+            margin-bottom: 0;
+            box-shadow: none;
+        }
+
+        .regex-flags {
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            font-family: 'Fira Code', monospace;
+            font-size: 15px;
+            padding: 14px 15px 14px 0;
+            outline: none;
+            margin-bottom: 0;
+            width: 60px;
+        }
+
+        #regexResult {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-code);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            overflow-y: auto;
+            color: #a7f3d0;
+            font-size: 14px;
+            white-space: pre-wrap;
+            /* Preserve line breaks */
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <!-- Header/Nav -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon"><i data-feather="terminal"></i></span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item"><i data-feather="home"></i> Home</a>
+            <a href="cardgen.html" class="nav-item"><i data-feather="credit-card"></i> Card Gen</a>
+            <a href="password.html" class="nav-item"><i data-feather="key"></i> Password Gen</a>
+            <a href="prefix.html" class="nav-item"><i data-feather="hash"></i> Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item"><i data-feather="search"></i> BIN Checker</a>
+            <a href="tempmail.html" class="nav-item"><i data-feather="mail"></i> Temp Mail</a>
+            <a href="json.html" class="nav-item"><i data-feather="code"></i> JSON Formatter</a>
+            <a href="base64.html" class="nav-item"><i data-feather="file-text"></i> Base64</a>
+            <a href="hash.html" class="nav-item"><i data-feather="lock"></i> Hash Gen</a>
+            <a href="url.html" class="nav-item"><i data-feather="link"></i> URL Tools</a>
+            <a href="ip.html" class="nav-item"><i data-feather="globe"></i> IP Lookup</a>
+            <a href="regex.html" class="nav-item active"><i data-feather="terminal"></i> Regex Tester</a>
+            <a href="lorem.html" class="nav-item"><i data-feather="type"></i> Lorem Ipsum</a>
+        </nav>
+    </div>
+    <div class="overlay" id="sidebar-overlay"></div>
+
+    <div class="page-wrapper">
+        <div class="container" style="max-width: 900px;">
+            <h2>Regex Tester</h2>
+
+            <label>REGULAR EXPRESSION</label>
+            <div class="regex-input-wrapper">
+                <span class="regex-slash">/</span>
+                <input type="text" id="regexPattern" class="regex-input-field" placeholder="[a-zA-Z0-9]+">
+                <span class="regex-slash" style="padding: 0 5px;">/</span>
+                <input type="text" id="regexFlags" class="regex-flags" value="gm" placeholder="gm">
+            </div>
+
+            <label>TEST STRING</label>
+            <textarea id="regexTestString" placeholder="Enter text here to test your regular expression against..."
+                style="height: 150px;"></textarea>
+
+            <button class="gen-btn" onclick="testRegex()">[ TEST REGEX ]</button>
+
+            <label style="display: flex; justify-content: space-between;">
+                <span>MATCH RESULTS</span>
+                <span id="matchCount" style="color: var(--primary);">0 Matches</span>
+            </label>
+            <div id="regexResult">No test performed yet.</div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function testRegex() {
+            const patternStr = document.getElementById('regexPattern').value;
+            const flagsStr = document.getElementById('regexFlags').value;
+            const testStr = document.getElementById('regexTestString').value;
+            const resultBox = document.getElementById('regexResult');
+            const matchCountEl = document.getElementById('matchCount');
+
+            if (!patternStr) {
+                showAlert('PLEASE ENTER A REGEX PATTERN', true);
+                return;
+            }
+
+            try {
+                const regex = new RegExp(patternStr, flagsStr);
+
+                // If it's a global search, we can count matches and highlight
+                if (regex.global) {
+                    let match;
+                    let lastIndex = 0;
+                    let resultHTML = '';
+                    let matchCount = 0;
+
+                    // Reset lastIndex just in case
+                    regex.lastIndex = 0;
+
+                    // Find all matches iteratively
+                    while ((match = regex.exec(testStr)) !== null) {
+                        // Prevent infinite loops with zero-length matches
+                        if (match.index === regex.lastIndex) {
+                            regex.lastIndex++;
+                        }
+
+                        // Append unmatched text before the match
+                        resultHTML += escapeHTML(testStr.substring(lastIndex, match.index));
+
+                        // Append matched text wrapped in highlight span
+                        resultHTML += `<span class="regex-highlight">${escapeHTML(match[0])}</span>`;
+
+                        lastIndex = match.index + match[0].length;
+                        matchCount++;
+                    }
+
+                    // Append remaining unmatched text
+                    resultHTML += escapeHTML(testStr.substring(lastIndex));
+
+                    resultBox.innerHTML = resultHTML || '<span style="color: #64748b;">No matches found.</span>';
+                    matchCountEl.innerText = `${matchCount} Match${matchCount !== 1 ? 'es' : ''}`;
+
+                } else {
+                    // Non-global search (only finds first match)
+                    const match = regex.exec(testStr);
+                    if (match) {
+                        let resultHTML = '';
+                        resultHTML += escapeHTML(testStr.substring(0, match.index));
+                        resultHTML += `<span class="regex-highlight">${escapeHTML(match[0])}</span>`;
+                        resultHTML += escapeHTML(testStr.substring(match.index + match[0].length));
+
+                        resultBox.innerHTML = resultHTML;
+                        matchCountEl.innerText = `1 Match (Non-Global)`;
+                    } else {
+                        resultBox.innerHTML = '<span style="color: #64748b;">No matches found.</span>';
+                        matchCountEl.innerText = `0 Matches`;
+                    }
+                }
+
+                if (matchCountEl.innerText.startsWith('0')) {
+                    matchCountEl.style.color = 'var(--text-muted)';
+                } else {
+                    matchCountEl.style.color = 'var(--primary)';
+                    showAlert('MATCHES FOUND!');
+                }
+
+            } catch (e) {
+                showAlert('INVALID REGEX PATTERN OR FLAGS', true);
+                resultBox.innerHTML = `<span style="color: var(--error);">Error: ${e.message}</span>`;
+                matchCountEl.innerText = `0 Matches`;
+            }
+        }
+
+        // Helper to prevent HTML injection in results
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g,
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+
+</html>

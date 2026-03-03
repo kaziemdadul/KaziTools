@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prefix/Suffix Tool Pro</title>
+    <title>Base64 Tool - KaziTools PRO</title>
     <!-- Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
@@ -26,7 +26,7 @@
     <header class="header">
         <a href="index.html" class="logo">
             <span class="logo-icon">
-                <i data-feather="hash"></i>
+                <i data-feather="file-text"></i>
             </span>
             KAZI TOOLS PRO
         </a>
@@ -53,7 +53,7 @@
             <a href="password.html" class="nav-item">
                 <i data-feather="key"></i> Password Gen
             </a>
-            <a href="prefix.html" class="nav-item active">
+            <a href="prefix.html" class="nav-item">
                 <i data-feather="hash"></i> Suffix & Prefix
             </a>
             <a href="bin.html" class="nav-item">
@@ -65,7 +65,7 @@
             <a href="json.html" class="nav-item">
                 <i data-feather="code"></i> JSON Formatter
             </a>
-            <a href="base64.html" class="nav-item">
+            <a href="base64.html" class="nav-item active">
                 <i data-feather="file-text"></i> Base64
             </a>
             <a href="hash.html" class="nav-item">
@@ -91,83 +91,86 @@
 
     <div class="page-wrapper">
         <div class="container">
-            <h2>Suffix & Prefix Editor</h2>
+            <h2>Base64 Encode & Decode</h2>
+
+            <label>INPUT STRING</label>
+            <textarea id="base64Input" placeholder="Enter text or Base64 string here..."
+                style="min-height: 120px;"></textarea>
 
             <div class="grid-input">
-                <div>
-                    <label>PREFIX (Added to Start)</label>
-                    <input type="text" id="prefixStr" placeholder="e.g. USER_">
-                </div>
-                <div>
-                    <label>SUFFIX (Added to End)</label>
-                    <input type="text" id="suffixStr" placeholder="e.g. _DONE">
-                </div>
+                <button class="gen-btn" onclick="encodeBase64()">[ ENCODE TO BASE64 ]</button>
+                <button class="gen-btn" onclick="decodeBase64()"
+                    style="background: linear-gradient(135deg, #374151, #1e293b); box-shadow: none;">[ DECODE FROM
+                    BASE64 ]</button>
             </div>
 
-            <label>INPUT DATA (Paste list here)</label>
-            <textarea id="inputText" placeholder="// PASTE YOUR LINES HERE...
-item1
-item2
-item3" style="margin-bottom: 20px;"></textarea>
-
-            <button class="gen-btn" onclick="applyPrefixSuffix()">[ APPLY FIXES ]</button>
-
-            <div id="outputContainer" class="output-container">
-                <div class="output-placeholder" id="placeholderMsg">// RESULTS WAITING...</div>
+            <label>RESULT</label>
+            <div class="output-container" style="height: 150px; padding: 0;">
+                <textarea id="base64Output" readonly
+                    style="width: 100%; height: 100%; border: none; background: transparent; color: #a7f3d0; margin: 0; padding: 15px; resize: none;"></textarea>
             </div>
-            <textarea id="outputHidden" style="display:none;"></textarea>
+            <button class="copy-btn" onclick="copyBase64()">COPY DATA</button>
 
-            <button class="copy-btn" onclick="copyAll()">COPY ALL DATA</button>
         </div>
     </div>
 
     <script src="script.js"></script>
     <script>
-
-        function applyPrefixSuffix() {
-            const prefix = document.getElementById('prefixStr').value;
-            const suffix = document.getElementById('suffixStr').value;
-            const rawInput = document.getElementById('inputText').value;
-
-            const outputContainer = document.getElementById('outputContainer');
-            const outputHidden = document.getElementById('outputHidden');
-
-            if (!rawInput.trim()) {
-                showAlert("PLEASE PASTE INPUT DATA FIRST", true);
+        function encodeBase64() {
+            const input = document.getElementById('base64Input').value;
+            if (!input) {
+                showAlert('PLEASE ENTER TEXT TO ENCODE', true);
                 return;
             }
+            try {
+                // btoa handles ASCII strings, encodeURIComponent escapes unicode to UTF8
+                const encoded = btoa(unescape(encodeURIComponent(input)));
+                document.getElementById('base64Output').value = encoded;
+                showAlert('SUCCESSFULLY ENCODED');
+            } catch (e) {
+                showAlert('ENCODING FAILED', true);
+            }
+        }
 
-            const lines = rawInput.split('\n');
-            outputContainer.innerHTML = '';
-            let allText = "";
+        function decodeBase64() {
+            const input = document.getElementById('base64Input').value;
+            if (!input) {
+                showAlert('PLEASE ENTER BASE64 TO DECODE', true);
+                return;
+            }
+            try {
+                // atob decodes base64, then decodeURIComponent handles unicode chars
+                const decoded = decodeURIComponent(escape(atob(input.trim())));
+                document.getElementById('base64Output').value = decoded;
+                showAlert('SUCCESSFULLY DECODED');
+            } catch (e) {
+                showAlert('INVALID BASE64 STRING', true);
+            }
+        }
 
-            lines.forEach((line) => {
-                // Skip empty lines to keep it clean
-                if (!line.trim()) return;
+        function copyBase64() {
+            const out = document.getElementById('base64Output').value;
+            if (!out) {
+                showAlert('NO OUTPUT TO COPY', true);
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(out).then(() => {
+                    showAlert('COPIED!');
+                }).catch(() => fallbackCopy(out));
+            } else {
+                fallbackCopy(out);
+            }
+        }
 
-                const resultLine = `${prefix}${line.trim()}${suffix}`;
-                allText += resultLine + "\n";
-
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'result-row';
-
-                const textSpan = document.createElement('span');
-                textSpan.className = 'result-text';
-                textSpan.innerText = resultLine;
-
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'btn-copy-single';
-                copyBtn.innerText = 'COPY';
-                copyBtn.onclick = () => {
-                    copyTextToClipboard(resultLine, true);
-                };
-
-                rowDiv.appendChild(textSpan);
-                rowDiv.appendChild(copyBtn);
-                outputContainer.appendChild(rowDiv);
-            });
-
-            outputHidden.value = allText;
+        function fallbackCopy(text) {
+            let temp = document.createElement("textarea");
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showAlert("COPIED!");
         }
     </script>
 </body>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Lookup - KaziTools PRO</title>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <!-- Header/Nav -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon"><i data-feather="globe"></i></span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item"><i data-feather="home"></i> Home</a>
+            <a href="cardgen.html" class="nav-item"><i data-feather="credit-card"></i> Card Gen</a>
+            <a href="password.html" class="nav-item"><i data-feather="key"></i> Password Gen</a>
+            <a href="prefix.html" class="nav-item"><i data-feather="hash"></i> Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item"><i data-feather="search"></i> BIN Checker</a>
+            <a href="tempmail.html" class="nav-item"><i data-feather="mail"></i> Temp Mail</a>
+            <a href="json.html" class="nav-item"><i data-feather="code"></i> JSON Formatter</a>
+            <a href="base64.html" class="nav-item"><i data-feather="file-text"></i> Base64</a>
+            <a href="hash.html" class="nav-item"><i data-feather="lock"></i> Hash Gen</a>
+            <a href="url.html" class="nav-item"><i data-feather="link"></i> URL Tools</a>
+            <a href="ip.html" class="nav-item active"><i data-feather="globe"></i> IP Lookup</a>
+            <a href="regex.html" class="nav-item"><i data-feather="terminal"></i> Regex Tester</a>
+            <a href="lorem.html" class="nav-item"><i data-feather="type"></i> Lorem Ipsum</a>
+        </nav>
+    </div>
+    <div class="overlay" id="sidebar-overlay"></div>
+
+    <div class="page-wrapper">
+        <div class="container" style="max-width: 700px;">
+            <h2>IP Lookup & Geolocation</h2>
+
+            <label>ENTER IP ADDRESS (Leave blank for Your IP)</label>
+            <input type="text" id="ipInput" placeholder="ex: 1.1.1.1">
+
+            <button class="gen-btn" id="lookupBtn" onclick="lookupIp()">[ INITIATE TRACE ]</button>
+
+            <div id="loading"
+                style="display: none; text-align: center; color: var(--primary); font-family: 'Fira Code', monospace; margin-bottom: 20px;">
+                // TRACING IP TARGET...
+            </div>
+
+            <div id="ipResult" style="display: none;">
+                <div class="result-row"
+                    style="margin-bottom: 15px; border-color: var(--primary); background: rgba(16, 185, 129, 0.05);">
+                    <div style="flex: 1;">
+                        <span style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px;">IP
+                            ADDRESS</span>
+                        <strong id="resIp" style="font-size: 18px; color: #fff;">...</strong>
+                    </div>
+                </div>
+
+                <div class="grid-input" style="gap: 15px;">
+                    <div class="result-row" style="flex-direction: column; align-items: flex-start;">
+                        <span style="font-size: 12px; color: var(--text-muted);">COUNTRY</span>
+                        <span id="resCountry" style="color: #a7f3d0; font-family: 'Fira Code', monospace;">-</span>
+                    </div>
+                    <div class="result-row" style="flex-direction: column; align-items: flex-start;">
+                        <span style="font-size: 12px; color: var(--text-muted);">CITY / REGION</span>
+                        <span id="resCity" style="color: #a7f3d0; font-family: 'Fira Code', monospace;">-</span>
+                    </div>
+                    <div class="result-row" style="flex-direction: column; align-items: flex-start;">
+                        <span style="font-size: 12px; color: var(--text-muted);">ISP / ORG</span>
+                        <span id="resIsp" style="color: #a7f3d0; font-family: 'Fira Code', monospace;">-</span>
+                    </div>
+                    <div class="result-row" style="flex-direction: column; align-items: flex-start;">
+                        <span style="font-size: 12px; color: var(--text-muted);">TIMEZONE</span>
+                        <span id="resTz" style="color: #a7f3d0; font-family: 'Fira Code', monospace;">-</span>
+                    </div>
+                </div>
+
+                <div class="output-container" style="margin-top: 20px; height: 180px;">
+                    <textarea id="rawJson" readonly
+                        style="width: 100%; height: 100%; border: none; background: transparent; color: #64748b; font-size: 13px; margin: 0; padding: 5px; resize: none;"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        async function lookupIp() {
+            const input = document.getElementById('ipInput').value.trim();
+            const btn = document.getElementById('lookupBtn');
+            const loader = document.getElementById('loading');
+            const resultBox = document.getElementById('ipResult');
+
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            loader.style.display = 'block';
+            resultBox.style.display = 'none';
+
+            // http://ip-api.com/json/ (free, no key needed). HTTPS requires pro, so using another free HTTPS endpoint.
+            // ipapi.co is free with no key for low volume
+            const endpoint = input ? `https://ipapi.co/${input}/json/` : 'https://ipapi.co/json/';
+
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (data.error) {
+                    showAlert(`ERROR: ${data.reason || 'INVALID IP'}`, true);
+                } else {
+                    document.getElementById('resIp').innerText = data.ip || 'Unknown';
+                    document.getElementById('resCountry').innerText = data.country_name || 'Unknown';
+                    document.getElementById('resCity').innerText = `${data.city || 'Unknown'}, ${data.region_code || ''}`;
+                    document.getElementById('resIsp').innerText = data.org || defaultIspFallback(data);
+                    document.getElementById('resTz').innerText = data.timezone || 'Unknown';
+
+                    document.getElementById('rawJson').value = JSON.stringify(data, null, 2);
+                    resultBox.style.display = 'block';
+                    showAlert('TRACE COMPLETE');
+                }
+            } catch (e) {
+                showAlert('FAILED TO CONNECT TO GEO API', true);
+            }
+
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            loader.style.display = 'none';
+        }
+
+        function defaultIspFallback(data) {
+            return data.asn ? data.asn : 'Unknown';
+        }
+    </script>
+</body>
+
+</html>

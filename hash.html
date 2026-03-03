@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Generator - KaziTools PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="customAlert" class="toast-overlay">
+        <h3 id="alertTitle">&gt;&gt; SYSTEM ALERT &lt;&lt;</h3>
+        <p id="alertMsg">Operation Completed.</p>
+    </div>
+
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon"><i data-feather="lock"></i></span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item"><i data-feather="home"></i> Home</a>
+            <a href="cardgen.html" class="nav-item"><i data-feather="credit-card"></i> Card Gen</a>
+            <a href="password.html" class="nav-item"><i data-feather="key"></i> Password Gen</a>
+            <a href="prefix.html" class="nav-item"><i data-feather="hash"></i> Suffix & Prefix</a>
+            <a href="bin.html" class="nav-item"><i data-feather="search"></i> BIN Checker</a>
+            <a href="tempmail.html" class="nav-item"><i data-feather="mail"></i> Temp Mail</a>
+            <a href="json.html" class="nav-item"><i data-feather="code"></i> JSON Formatter</a>
+            <a href="base64.html" class="nav-item"><i data-feather="file-text"></i> Base64</a>
+            <a href="hash.html" class="nav-item active"><i data-feather="lock"></i> Hash Gen</a>
+            <a href="url.html" class="nav-item"><i data-feather="link"></i> URL Tools</a>
+            <a href="ip.html" class="nav-item"><i data-feather="globe"></i> IP Lookup</a>
+            <a href="regex.html" class="nav-item"><i data-feather="terminal"></i> Regex Tester</a>
+            <a href="lorem.html" class="nav-item"><i data-feather="type"></i> Lorem Ipsum</a>
+        </nav>
+    </div>
+    <div class="overlay" id="sidebar-overlay"></div>
+
+    <div class="page-wrapper">
+        <div class="container" style="max-width: 800px;">
+            <h2>Secure Hash Generator</h2>
+            <label>INPUT STRING</label>
+            <textarea id="hashInput" placeholder="Enter text to hash..."
+                style="min-height: 100px; margin-bottom: 20px;"></textarea>
+
+            <button class="gen-btn" onclick="generateHashes()">[ GENERATE HASHES ]</button>
+
+            <!-- SHA-1 Result Box -->
+            <div style="margin-top: 15px;">
+                <label>SHA-1</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="outSha1" readonly placeholder="..."
+                        style="margin-bottom: 0; flex: 1; font-size: 13px;">
+                    <button class="btn-copy-single" onclick="copyHash('outSha1')" style="padding: 0 20px;">COPY</button>
+                </div>
+            </div>
+
+            <!-- SHA-256 Result Box -->
+            <div style="margin-top: 15px;">
+                <label>SHA-256</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="outSha256" readonly placeholder="..."
+                        style="margin-bottom: 0; flex: 1; font-size: 13px;">
+                    <button class="btn-copy-single" onclick="copyHash('outSha256')"
+                        style="padding: 0 20px;">COPY</button>
+                </div>
+            </div>
+
+            <!-- SHA-384 Result Box -->
+            <div style="margin-top: 15px;">
+                <label>SHA-384</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="outSha384" readonly placeholder="..."
+                        style="margin-bottom: 0; flex: 1; font-size: 13px;">
+                    <button class="btn-copy-single" onclick="copyHash('outSha384')"
+                        style="padding: 0 20px;">COPY</button>
+                </div>
+            </div>
+
+            <!-- SHA-512 Result Box -->
+            <div style="margin-top: 15px;">
+                <label>SHA-512</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="outSha512" readonly placeholder="..."
+                        style="margin-bottom: 0; flex: 1; font-size: 13px;">
+                    <button class="btn-copy-single" onclick="copyHash('outSha512')"
+                        style="padding: 0 20px;">COPY</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        async function getHash(alg, text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest(alg, data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        async function generateHashes() {
+            const text = document.getElementById('hashInput').value;
+            if (!text) {
+                showAlert('PLEASE ENTER TEXT TO HASH', true);
+                return;
+            }
+
+            try {
+                const sha1 = await getHash('SHA-1', text);
+                const sha256 = await getHash('SHA-256', text);
+                const sha384 = await getHash('SHA-384', text);
+                const sha512 = await getHash('SHA-512', text);
+
+                document.getElementById('outSha1').value = sha1;
+                document.getElementById('outSha256').value = sha256;
+                document.getElementById('outSha384').value = sha384;
+                document.getElementById('outSha512').value = sha512;
+
+                showAlert('HASHES GENERATED SUCCESSFULLY');
+            } catch (e) {
+                showAlert('ERROR GENERATING HASHES', true);
+            }
+        }
+
+        function copyHash(id) {
+            const val = document.getElementById(id).value;
+            if (!val) {
+                showAlert('NO HASH TO COPY', true);
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(val).then(() => {
+                    showAlert('HASH COPIED!');
+                }).catch(() => fallbackCopy(val));
+            } else {
+                fallbackCopy(val);
+            }
+        }
+
+        function fallbackCopy(text) {
+            let temp = document.createElement("textarea");
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showAlert("HASH COPIED!");
+        }
+    </script>
+</body>
+
+</html>
