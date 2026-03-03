@@ -99,6 +99,14 @@
             <label>ENTER LONG URL</label>
             <input type="url" id="longUrlInput" placeholder="https://www.example.com/very/long/path/to/something">
 
+            <label>SELECT PROVIDER</label>
+            <select id="providerSelect"
+                style="margin-bottom: 20px; width: 100%; padding: 12px; background: rgba(20, 25, 35, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; border-radius: 8px; font-family: 'Inter', sans-serif;">
+                <option value="isgd">is.gd (Fastest)</option>
+                <option value="vgd">v.gd (Alternative)</option>
+                <option value="tinyurl">TinyURL.com</option>
+            </select>
+
             <button class="gen-btn" id="shortenBtn" onclick="shortenUrl()">[ SHORTEN URL ]</button>
 
             <div id="loading"
@@ -123,12 +131,14 @@
     <script>
         async function shortenUrl() {
             const inputField = document.getElementById('longUrlInput');
+            const providerSelect = document.getElementById('providerSelect');
             const outputField = document.getElementById('shortUrlOutput');
             const errorBox = document.getElementById('shortUrlError');
             const btn = document.getElementById('shortenBtn');
             const loader = document.getElementById('loading');
 
             let url = inputField.value.trim();
+            const provider = providerSelect.value;
 
             if (!url) {
                 showAlert('PLEASE ENTER A URL', true);
@@ -149,15 +159,35 @@
             loader.style.display = 'block';
 
             try {
-                // Using is.gd API which is free and supports CORS JSONP/JSON
-                const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
-                const data = await response.json();
+                let apiUrl = '';
+                let resultUrl = '';
 
-                if (data.shorturl) {
-                    outputField.value = data.shorturl;
+                if (provider === 'isgd') {
+                    apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`;
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    if (data.shorturl) resultUrl = data.shorturl;
+                    else if (data.errormessage) throw new Error(data.errormessage);
+                } else if (provider === 'vgd') {
+                    apiUrl = `https://v.gd/create.php?format=json&url=${encodeURIComponent(url)}`;
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    if (data.shorturl) resultUrl = data.shorturl;
+                    else if (data.errormessage) throw new Error(data.errormessage);
+                } else if (provider === 'tinyurl') {
+                    // TinyURL plain text API
+                    apiUrl = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`;
+                    const response = await fetch(apiUrl);
+                    if (response.ok) {
+                        resultUrl = await response.text();
+                    } else {
+                        throw new Error("Failed to shorten with TinyURL");
+                    }
+                }
+
+                if (resultUrl) {
+                    outputField.value = resultUrl;
                     showAlert('URL SHORTENED SUCCESSFULLY');
-                } else if (data.errormessage) {
-                    throw new Error(data.errormessage);
                 } else {
                     throw new Error("Unknown API error");
                 }

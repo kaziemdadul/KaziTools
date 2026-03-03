@@ -201,11 +201,21 @@
                 </p>
             </div>
 
-            <!-- Tools Grid -->
             <div style="padding: 0 30px 40px 30px;">
-                <h2 style="font-size: 16px; margin-bottom: 20px; color: #fff;">>> AVAILABLE MODULES</h2>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h2 style="font-size: 16px; color: #fff; margin:0;">>> AVAILABLE MODULES</h2>
 
-                <div class="tools-grid">
+                    <!-- Search Bar -->
+                    <div style="position: relative; flex: 1; max-width: 300px;">
+                        <i data-feather="search"
+                            style="position: absolute; left: 12px; top: 10px; color: #9baac8; width: 18px;"></i>
+                        <input type="text" id="toolSearchInput" placeholder="Search modules..." oninput="filterTools()"
+                            style="width: 100%; padding: 10px 10px 10px 40px; border-radius: 8px; background: rgba(20,25,35,0.8); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-family: 'Inter', sans-serif;">
+                    </div>
+                </div>
+
+                <div class="tools-grid" id="toolsGrid">
 
                     <a href="cardgen.html" class="tool-card">
                         <div class="tool-icon">&lt;C/G&gt;</div>
@@ -297,6 +307,24 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        function filterTools() {
+            const query = document.getElementById('toolSearchInput').value.toLowerCase();
+            const toolsGrid = document.getElementById('toolsGrid');
+            const cards = toolsGrid.getElementsByClassName('tool-card');
+
+            for (let i = 0; i < cards.length; i++) {
+                const title = cards[i].querySelector('.tool-title').innerText.toLowerCase();
+                const desc = cards[i].querySelector('.tool-desc').innerText.toLowerCase();
+
+                if (title.includes(query) || desc.includes(query)) {
+                    cards[i].style.display = "";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>
