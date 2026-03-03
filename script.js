@@ -75,6 +75,35 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+// Hamburger Menu Logic
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    const hamburger = document.getElementById('hamburger-menu');
+    const sidebar = document.getElementById('sidebar');
+    const closeBtn = document.getElementById('close-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (hamburger && sidebar && closeBtn && overlay) {
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    }
+});
+
 function generateLuhnDigit(partialCardNum) {
     let sum = 0;
     let shouldDouble = true;

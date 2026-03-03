@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BIN Checker Pro</title>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+
     <!-- Link the external CSS file -->
     <link rel="stylesheet" href="style.css">
     <style>
@@ -97,26 +102,51 @@
         <p id="alertMsg">Operation Completed.</p>
     </div>
 
-    <!-- Navigation Header -->
-    <nav class="top-nav">
-        <a href="/" class="nav-brand" style="text-decoration: none;">KAZI TOOLS PRO</a>
+    <!-- Header/Nav -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon">
+                <i data-feather="search"></i>
+            </span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
 
-        <!-- Hamburger Menu -->
-        <div class="menu-toggle" onclick="toggleMenu()">
-            <span></span>
-            <span></span>
-            <span></span>
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
         </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">
+                <i data-feather="home"></i> Home
+            </a>
+            <a href="cardgen.html" class="nav-item">
+                <i data-feather="credit-card"></i> Card Gen
+            </a>
+            <a href="password.html" class="nav-item">
+                <i data-feather="key"></i> Password Gen
+            </a>
+            <a href="prefix.html" class="nav-item">
+                <i data-feather="hash"></i> Suffix & Prefix
+            </a>
+            <a href="bin.html" class="nav-item active">
+                <i data-feather="search"></i> BIN Checker
+            </a>
+            <a href="tempmail.html" class="nav-item">
+                <i data-feather="mail"></i> Temp Mail
+            </a>
+        </nav>
+    </div>
 
-        <div class="nav-links" id="navLinks">
-            <a href="/" class="nav-item">Home</a>
-            <a href="cardgen.html" class="nav-item">Card Gen</a>
-            <a href="password.html" class="nav-item">Password Gen</a>
-            <a href="prefix.html" class="nav-item">Suffix & Prefix</a>
-            <a href="bin.html" class="nav-item active">BIN Checker</a>
-            <a href="tempmail.html" class="nav-item">Temp Mail</a>
-        </div>
-    </nav>
+    <!-- Overlay -->
+    <div class="overlay" id="sidebar-overlay"></div>
 
     <div class="page-wrapper">
         <div class="container" style="max-width: 800px;">
@@ -207,11 +237,6 @@
 
     <script src="script.js"></script>
     <script>
-        function toggleMenu() {
-            const navLinks = document.getElementById('navLinks');
-            navLinks.classList.toggle('show');
-        }
-
         // Helper function to delay between requests
         const delay = ms => new Promise(res => setTimeout(res, ms));
 
