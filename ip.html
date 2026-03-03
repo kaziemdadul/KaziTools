@@ -140,28 +140,40 @@
             loader.style.display = 'block';
             resultBox.style.display = 'none';
 
-            // http://ip-api.com/json/ (free, no key needed). HTTPS requires pro, so using another free HTTPS endpoint.
-            // ipapi.co is free with no key for low volume
-            const endpoint = input ? `https://ipapi.co/${input}/json/` : 'https://ipapi.co/json/';
+            // ipapi.co frequently rate limits or blocks. Switching to ipwho.is which is reliable and free for CORS GET.
+            const endpoint = input ? `https://ipwho.is/${input}` : 'https://ipwho.is/';
 
             try {
                 const response = await fetch(endpoint);
                 const data = await response.json();
 
-                if (data.error) {
+                if (!data.success && data.message) {
+                    showAlert(`ERROR: ${data.message || 'INVALID IP'}`, true);
+                } else if (data.error) {
                     showAlert(`ERROR: ${data.reason || 'INVALID IP'}`, true);
                 } else {
                     document.getElementById('resIp').innerText = data.ip || 'Unknown';
-                    document.getElementById('resCountry').innerText = data.country_name || 'Unknown';
-                    document.getElementById('resCity').innerText = `${data.city || 'Unknown'}, ${data.region_code || ''}`;
-                    document.getElementById('resIsp').innerText = data.org || defaultIspFallback(data);
-                    document.getElementById('resTz').innerText = data.timezone || 'Unknown';
+                    document.getElementById('resCountry').innerText = data.country || 'Unknown';
+                    document.getElementById('resCity').innerText = `${data.city || 'Unknown'}, ${data.region_code || data.region || ''}`;
+
+                    let isp = 'Unknown';
+                    if (data.connection && data.connection.isp) isp = data.connection.isp;
+                    else if (data.org) isp = data.org;
+
+                    document.getElementById('resIsp').innerText = isp;
+
+                    let tz = 'Unknown';
+                    if (data.timezone && data.timezone.id) tz = data.timezone.id;
+                    else if (data.timezone) tz = data.timezone;
+
+                    document.getElementById('resTz').innerText = tz;
 
                     document.getElementById('rawJson').value = JSON.stringify(data, null, 2);
                     resultBox.style.display = 'block';
                     showAlert('TRACE COMPLETE');
                 }
             } catch (e) {
+                console.error("IP Lookup Error:", e);
                 showAlert('FAILED TO CONNECT TO GEO API', true);
             }
 
