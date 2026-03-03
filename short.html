@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base64 Tool - KaziTools PRO</title>
+    <title>URL Shortener - KaziTools PRO</title>
     <!-- Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
@@ -26,7 +26,7 @@
     <header class="header">
         <a href="index.html" class="logo">
             <span class="logo-icon">
-                <i data-feather="file-text"></i>
+                <i data-feather="scissors"></i>
             </span>
             KAZI TOOLS PRO
         </a>
@@ -65,7 +65,7 @@
             <a href="json.html" class="nav-item">
                 <i data-feather="code"></i> JSON Formatter
             </a>
-            <a href="base64.html" class="nav-item active">
+            <a href="base64.html" class="nav-item">
                 <i data-feather="file-text"></i> Base64
             </a>
             <a href="hash.html" class="nav-item">
@@ -74,7 +74,7 @@
             <a href="url.html" class="nav-item">
                 <i data-feather="link"></i> URL Tools
             </a>
-            <a href="short.html" class="nav-item">
+            <a href="short.html" class="nav-item active">
                 <i data-feather="scissors"></i> URL Shortener
             </a>
             <a href="ip.html" class="nav-item">
@@ -93,76 +93,97 @@
     <div class="overlay" id="sidebar-overlay"></div>
 
     <div class="page-wrapper">
-        <div class="container">
-            <h2>Base64 Encode & Decode</h2>
+        <div class="container" style="max-width: 800px;">
+            <h2>URL Shortener</h2>
 
-            <label>INPUT STRING</label>
-            <textarea id="base64Input" placeholder="Enter text or Base64 string here..."
-                style="min-height: 120px;"></textarea>
+            <label>ENTER LONG URL</label>
+            <input type="url" id="longUrlInput" placeholder="https://www.example.com/very/long/path/to/something">
 
-            <div class="grid-input">
-                <button class="gen-btn" onclick="encodeBase64()">[ ENCODE TO BASE64 ]</button>
-                <button class="gen-btn" onclick="decodeBase64()"
-                    style="background: linear-gradient(135deg, #374151, #1e293b); box-shadow: none;">[ DECODE FROM
-                    BASE64 ]</button>
+            <button class="gen-btn" id="shortenBtn" onclick="shortenUrl()">[ SHORTEN URL ]</button>
+
+            <div id="loading"
+                style="display: none; text-align: center; color: var(--primary); font-family: 'Fira Code', monospace; margin-bottom: 20px;">
+                // CONNECTING TO API...
             </div>
 
-            <label>RESULT</label>
-            <div class="output-container" style="height: 150px; padding: 0;">
-                <textarea id="base64Output" readonly
-                    style="width: 100%; height: 100%; border: none; background: transparent; color: #a7f3d0; margin: 0; padding: 15px; resize: none;"></textarea>
+            <label>SHORTENED RESULT</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="shortUrlOutput" readonly placeholder="..."
+                    style="margin-bottom: 0; flex: 1; font-family: 'Fira Code', monospace; color: #a7f3d0; background: rgba(0,0,0,0.3);">
+                <button class="btn-copy-single" onclick="copyShortUrl()" style="padding: 0 25px;">COPY</button>
             </div>
-            <button class="copy-btn" onclick="copyBase64()">COPY DATA</button>
+
+            <div id="shortUrlError"
+                style="color: var(--error); font-size: 13px; font-family: 'Fira Code', monospace; display: none;"></div>
 
         </div>
     </div>
 
     <script src="script.js"></script>
     <script>
-        function encodeBase64() {
-            const input = document.getElementById('base64Input').value;
-            if (!input) {
-                showAlert('PLEASE ENTER TEXT TO ENCODE', true);
+        async function shortenUrl() {
+            const inputField = document.getElementById('longUrlInput');
+            const outputField = document.getElementById('shortUrlOutput');
+            const errorBox = document.getElementById('shortUrlError');
+            const btn = document.getElementById('shortenBtn');
+            const loader = document.getElementById('loading');
+
+            let url = inputField.value.trim();
+
+            if (!url) {
+                showAlert('PLEASE ENTER A URL', true);
                 return;
             }
+
+            // Ensure URL has protocol
+            if (!/^https?:\/\//i.test(url)) {
+                url = 'http://' + url;
+                inputField.value = url;
+            }
+
+            errorBox.style.display = 'none';
+            outputField.value = '';
+
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            loader.style.display = 'block';
+
             try {
-                // btoa handles ASCII strings, encodeURIComponent escapes unicode to UTF8
-                const encoded = btoa(unescape(encodeURIComponent(input)));
-                document.getElementById('base64Output').value = encoded;
-                showAlert('SUCCESSFULLY ENCODED');
+                // Using is.gd API which is free and supports CORS JSONP/JSON
+                const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+
+                if (data.shorturl) {
+                    outputField.value = data.shorturl;
+                    showAlert('URL SHORTENED SUCCESSFULLY');
+                } else if (data.errormessage) {
+                    throw new Error(data.errormessage);
+                } else {
+                    throw new Error("Unknown API error");
+                }
             } catch (e) {
-                showAlert('ENCODING FAILED', true);
+                errorBox.innerText = `>> ERROR: ${e.message || 'Failed to connect to shortener API.'}`;
+                errorBox.style.display = 'block';
+                showAlert('FAILED TO SHORTEN URL', true);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                loader.style.display = 'none';
             }
         }
 
-        function decodeBase64() {
-            const input = document.getElementById('base64Input').value;
-            if (!input) {
-                showAlert('PLEASE ENTER BASE64 TO DECODE', true);
-                return;
-            }
-            try {
-                // atob decodes base64, then decodeURIComponent handles unicode chars
-                const decoded = decodeURIComponent(escape(atob(input.trim())));
-                document.getElementById('base64Output').value = decoded;
-                showAlert('SUCCESSFULLY DECODED');
-            } catch (e) {
-                showAlert('INVALID BASE64 STRING', true);
-            }
-        }
-
-        function copyBase64() {
-            const out = document.getElementById('base64Output').value;
-            if (!out) {
-                showAlert('NO OUTPUT TO COPY', true);
+        function copyShortUrl() {
+            const val = document.getElementById('shortUrlOutput').value;
+            if (!val) {
+                showAlert('NO URL TO COPY', true);
                 return;
             }
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(out).then(() => {
-                    showAlert('COPIED!');
-                }).catch(() => fallbackCopy(out));
+                navigator.clipboard.writeText(val).then(() => {
+                    showAlert('URL COPIED!');
+                }).catch(() => fallbackCopy(val));
             } else {
-                fallbackCopy(out);
+                fallbackCopy(val);
             }
         }
 
@@ -173,7 +194,7 @@
             temp.select();
             document.execCommand("copy");
             document.body.removeChild(temp);
-            showAlert("COPIED!");
+            showAlert("URL COPIED!");
         }
     </script>
 </body>
