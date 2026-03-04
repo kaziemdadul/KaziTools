@@ -128,7 +128,8 @@
                     <label>CUSTOM PREFIX (Optional)</label>
                     <input type="text" id="custom-prefix-input" placeholder="e.g. hello" autocomplete="off">
                 </div>
-                <div><label>PIN / PASSWORD (Optional)</label><input type="text" id="custom-password-input" placeholder="Create or Enter PIN" autocomplete="off"></div><div>
+                <div><label>PIN / PASSWORD (Optional)</label><input type="text" id="custom-password-input" placeholder="Create or Enter PIN" autocomplete="off"></div>
+                <div>
                     <label>DOMAIN</label>
                     <select id="domain-select">
                         <option value="auto">Auto-Select Domain</option>
@@ -179,6 +180,28 @@
                 <div id="inbox-empty" class="output-placeholder" style="text-align: center; margin-top: 20px;">
                     // WAITING FOR DATA STREAM...
                 </div>
+                <div id="inbox-loader" class="hidden"
+                    style="color: #64748b; padding: 5px; text-align: center; font-family: 'Consolas', monospace;">//
+                    CHECKING FOR INCOMING TRANSMISSIONS...</div>
+                <div id="inbox-list" class="hidden" style="display: flex; flex-direction: column; gap: 5px;"></div>
+            </div>
+
+            <!-- History Section Inline -->
+            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                <label style="margin: 0; color: var(--primary);">HISTORY (<span id="history-count">0</span>)</label>
+                <div style="display: flex; gap: 10px; align-items: center;" id="history-pagination">
+                    <button class="btn-copy-single" id="history-prev-btn" style="background: transparent; border: 1px solid #64748b; color: #64748b; padding: 2px 10px;">PREV</button>
+                    <span id="history-page-info" style="color: #64748b; font-size: 12px; font-family: 'Consolas', monospace;">1 / 1</span>
+                    <button class="btn-copy-single" id="history-next-btn" style="background: transparent; border: 1px solid #64748b; color: #64748b; padding: 2px 10px;">NEXT</button>
+                </div>
+            </div>
+            
+            <div id="historyContainer" class="output-container" style="height: auto; min-height: 100px; padding: 10px;">
+                <div id="history-empty" class="output-placeholder" style="text-align: center; margin-top: 10px; font-size: 13px;">
+                    // NO ACCOUNTS IN HISTORY...
+                </div>
+                <div id="history-list" class="hidden" style="display: flex; flex-direction: column; gap: 5px;"></div>
+            </div>
                 <div id="inbox-loader" class="hidden"
                     style="color: #64748b; padding: 5px; text-align: center; font-family: 'Consolas', monospace;">//
                     CHECKING FOR INCOMING TRANSMISSIONS...</div>

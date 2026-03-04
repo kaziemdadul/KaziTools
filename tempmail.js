@@ -18,6 +18,9 @@ let countdownTimer = null;
 let countdownSeconds = 10;
 let isDarkTheme = true;
 let isGenerating = false;
+let emailHistory = []; // Array of { email, password, api, accountId, token, createdAt }
+let historyCurrentPage = 1;
+const historyItemsPerPage = 5;
 
 // DOM Elements
 const els = {
@@ -46,6 +49,12 @@ const els = {
     modalContentFrame: document.getElementById('modal-content-frame'),
 
     themeToggle: document.getElementById('theme-toggle'),
+    historyList: document.getElementById('history-list'),
+    historyEmpty: document.getElementById('history-empty'),
+    historyPrevBtn: document.getElementById('history-prev-btn'),
+    historyNextBtn: document.getElementById('history-next-btn'),
+    historyCount: document.getElementById('history-count'),
+    historyPageInfo: document.getElementById('history-page-info'),
     toastContainer: document.getElementById('toast-container'),
 
     // New Features
@@ -66,6 +75,7 @@ const els = {
 
 // Initialize App
 async function init() {
+    loadHistory();
     loadTheme();
     setupEventListeners();
     await fetchDomains();
@@ -356,6 +366,10 @@ async function generateNewEmail() {
         localStorage.setItem('dropmail_address', currentEmail);
         localStorage.setItem('dropmail_account_id', currentAccountId);
         localStorage.setItem('dropmail_api', currentApi);
+
+        // Save to History (if new or login)
+        let historyObj = { email: address, password: customPassword || password, api: targetApi, accountId: currentAccountId, token: currentToken, createdAt: new Date().toISOString() };
+        saveToHistory(historyObj);
 
         // Reset inbox
         emails = [];
@@ -779,6 +793,119 @@ function isToday(date) {
         date.getMonth() == today.getMonth() &&
         date.getFullYear() == today.getFullYear();
 }
+
+function loadHistory() {
+    const historyJSON = localStorage.getItem('dropmail_history');
+    if (historyJSON) {
+        try {
+            emailHistory = JSON.parse(historyJSON);
+        } catch (e) { emailHistory = []; }
+    }
+    renderHistory();
+}
+
+function saveToHistory(newObj) {
+    // Check if exists, remove to put at top
+    emailHistory = emailHistory.filter(h => h.email !== newObj.email);
+    emailHistory.unshift(newObj);
+    localStorage.setItem('dropmail_history', JSON.stringify(emailHistory));
+    renderHistory();
+}
+
+function renderHistory() {
+    if (!els.historyList || !els.historyEmpty || !els.historyCount || !els.historyPageInfo) return;
+
+    els.historyCount.textContent = emailHistory.length;
+
+    if (emailHistory.length === 0) {
+        els.historyEmpty.classList.remove('hidden');
+        els.historyList.classList.add('hidden');
+        els.historyPageInfo.textContent = "1 / 1";
+        return;
+    }
+
+    els.historyEmpty.classList.add('hidden');
+    els.historyList.classList.remove('hidden');
+
+    const totalPages = Math.ceil(emailHistory.length / historyItemsPerPage) || 1;
+    if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
+    if (historyCurrentPage < 1) historyCurrentPage = 1;
+
+    els.historyPageInfo.textContent = `${historyCurrentPage} / ${totalPages}`;
+
+    const startIndex = (historyCurrentPage - 1) * historyItemsPerPage;
+    const endIndex = startIndex + historyItemsPerPage;
+    const itemsToRender = emailHistory.slice(startIndex, endIndex);
+
+    els.historyList.innerHTML = '';
+
+    itemsToRender.forEach(h => {
+        const el = document.createElement('div');
+        el.className = 'result-row';
+
+        const date = new Date(h.createdAt);
+        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+        // Mark active
+        const isActive = (h.email === currentEmail);
+        const activeStyle = isActive ? 'border-left: 2px solid var(--accent); padding-left: 8px;' : '';
+        const activeText = isActive ? '<span style="color: var(--accent); font-size: 10px; margin-right: 5px;">[ACTIVE]</span>' : '';
+
+        el.innerHTML = `
+            <div class="result-text" style="flex: 1; display: flex; align-items: center; gap: 10px; cursor: pointer; ${activeStyle}">
+                <span style="color: var(--primary); font-size: 12px; width: 45px; flex-shrink: 0;">[${dateStr}]</span> 
+                ${activeText}
+                <span style="color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${h.email}</span>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn-copy-single" onclick="loginFromHistory('${h.email}')" style="background: transparent; border: 1px solid var(--primary); color: var(--primary);">USE</button>
+                <button class="btn-copy-single" onclick="deleteFromHistory('${h.email}')" style="background: transparent; border: 1px solid var(--error); color: var(--error);">DEL</button>
+            </div>
+        `;
+
+        els.historyList.appendChild(el);
+    });
+}
+
+function changeHistoryPage(delta) {
+    historyCurrentPage += delta;
+    renderHistory();
+}
+
+if (els.historyPrevBtn) els.historyPrevBtn.addEventListener('click', () => changeHistoryPage(-1));
+if (els.historyNextBtn) els.historyNextBtn.addEventListener('click', () => changeHistoryPage(1));
+
+window.loginFromHistory = async function (email) {
+    const histItem = emailHistory.find(h => h.email === email);
+    if (!histItem) return;
+
+    if (email === currentEmail) {
+        showToast("Address is already active", "info");
+        return;
+    }
+
+    if (els.customPrefixInput) els.customPrefixInput.value = "";
+    if (els.customPasswordInput) els.customPasswordInput.value = histItem.password;
+
+    // Set domain dropdown to match
+    const domainPart = email.split('@')[1];
+    if (els.domainSelect) els.domainSelect.value = domainPart;
+
+    // Trigger generation login
+    els.customPrefixInput.value = email.split('@')[0];
+    await generateNewEmail();
+};
+
+window.deleteFromHistory = function (email) {
+    if (email === currentEmail) {
+        showToast("Cannot delete currently active address from history.", "error");
+        return;
+    }
+    emailHistory = emailHistory.filter(h => h.email !== email);
+    localStorage.setItem('dropmail_history', JSON.stringify(emailHistory));
+    renderHistory();
+    showToast("Address removed from history.", "success");
+};
 
 function loadTheme() {
     const savedTheme = localStorage.getItem('dropmail_theme');
