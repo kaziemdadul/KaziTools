@@ -29,6 +29,7 @@ const els = {
     createBtn: document.getElementById('create-btn'),
     checkMailBtn: document.getElementById('check-mail-btn'),
     domainSelect: document.getElementById('domain-select'),
+    customPasswordInput: document.getElementById('custom-password-input'),
     customPrefixInput: document.getElementById('custom-prefix-input'),
 
     inboxEmpty: document.getElementById('inbox-empty'),
@@ -194,6 +195,17 @@ async function generateNewEmail() {
     els.emailLoader.classList.remove('hidden');
 
     try {
+        // Silently delete previously active account to prevent rate limits
+        if (currentAccountId && currentToken && currentApi) {
+            try {
+                await fetch(`${APIS[currentApi]}/accounts/${currentAccountId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+            } catch (ignore) { }
+            // Don't clear localStorage yet, it will be overwritten if successful
+        }
+
         // 1. Get available domains if not fetched
         if (availableDomains.length === 0) {
             await fetchDomains();
@@ -251,7 +263,7 @@ async function generateNewEmail() {
         }
 
         let address = `${selectedPrefix}@${selectedDomain}`;
-        const password = Math.random().toString(36).substring(2, 15);
+        let customPassword = els.customPasswordInput ? els.customPasswordInput.value.trim() : ""; const password = customPassword ? customPassword : Math.random().toString(36).substring(2, 15);
 
         // 3. Create account
         let createRes = await fetch(`${APIS[targetApi]}/accounts`, {
@@ -286,18 +298,26 @@ async function generateNewEmail() {
             }
         }
 
+        let isExistingAccount = false;
         if (!createRes.ok) {
             if (createRes.status === 429) {
                 throw new Error('Too many requests (rate limit). Please wait a moment.');
             }
             const errData = await createRes.json();
             if (createRes.status === 422 && errData['hydra:description'] && errData['hydra:description'].includes('already')) {
-                throw new Error('This exact email is already taken. Try a different name.');
+                if (customPassword) {
+                    isExistingAccount = true;
+                } else {
+                    throw new Error('This exact email is already taken. Try a different name.');
+                }
+            } else {
+                throw new Error('Failed to create account');
             }
-            throw new Error('Failed to create account');
         }
-
-        const accountData = await createRes.json();
+        let accountData = null;
+        if (!isExistingAccount) {
+            accountData = await createRes.json();
+        }
 
         // 4. Login to get token
         const tokenRes = await fetch(`${APIS[targetApi]}/token`, {
@@ -305,13 +325,31 @@ async function generateNewEmail() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ address, password })
         });
-        if (!tokenRes.ok) throw new Error('Failed to get token');
+        if (!tokenRes.ok) {
+            if (isExistingAccount) {
+                throw new Error('Incorrect password or email combination.');
+            } else {
+                throw new Error('Failed to get token');
+            }
+        }
         const tokenData = await tokenRes.json();
 
         // 5. Save state
         currentEmail = address;
         currentToken = tokenData.token;
-        currentAccountId = accountData.id;
+        if (isExistingAccount) {
+            const meRes = await fetch(`${APIS[targetApi]}/me`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (meRes.ok) {
+                const meData = await meRes.json();
+                currentAccountId = meData.id;
+            } else {
+                currentAccountId = 'unknown'; // fallback
+            }
+        } else {
+            currentAccountId = accountData.id;
+        }
         currentApi = targetApi;
 
         localStorage.setItem('dropmail_token', currentToken);

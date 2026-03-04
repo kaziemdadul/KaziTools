@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -123,12 +123,12 @@
         <div class="container">
             <h2>Temp Mail</h2>
 
-            <div class="grid-input">
+            <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr;">
                 <div>
                     <label>CUSTOM PREFIX (Optional)</label>
                     <input type="text" id="custom-prefix-input" placeholder="e.g. hello" autocomplete="off">
                 </div>
-                <div>
+                <div><label>PIN / PASSWORD (Optional)</label><input type="text" id="custom-password-input" placeholder="Create or Enter PIN" autocomplete="off"></div><div>
                     <label>DOMAIN</label>
                     <select id="domain-select">
                         <option value="auto">Auto-Select Domain</option>
@@ -136,7 +136,7 @@
                 </div>
             </div>
 
-            <div class="grid-input">
+            <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr;">
                 <div>
                     <button class="gen-btn" id="create-btn" style="margin-bottom: 0;">[ CREATE SPECIFIC ]</button>
                 </div>
