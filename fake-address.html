@@ -1,0 +1,839 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Address Generator - KaziTools PRO</title>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Inline styles mimicking cardgen layout -->
+    <style>
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .tool-header {
+            margin-bottom: 25px;
+        }
+
+        .tool-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tool-title .icon-box {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 10px;
+            border-radius: 12px;
+            display: inline-flex;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .tool-desc {
+            color: #9baac8;
+            font-size: 14px;
+        }
+
+        .panel-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 800px) {
+            .panel-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel,
+        .output-panel {
+            background: rgba(20, 25, 35, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #9baac8;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-control:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        select.input-control {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239baac8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        select.input-control option {
+            background: #141923;
+            color: #fff;
+        }
+
+        /* Custom Select Searchable */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+            user-select: none;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-select-wrapper.open .custom-select-trigger {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .custom-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 5px;
+            background: #141923;
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .custom-select-wrapper.open .custom-select-options {
+            display: block;
+        }
+
+        .custom-select-search {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 15px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-select-search:focus {
+            border-bottom: 1px solid #10b981;
+        }
+
+        .custom-select-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .custom-select-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-select-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-select-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .custom-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            color: #9baac8;
+            transition: all 0.2s;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+        }
+
+        .custom-option:hover,
+        .custom-option.selected {
+            background: rgba(16, 185, 129, 0.1);
+            color: #fff;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .output-title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .results-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .results-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .results-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .results-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        /* Grid specifically for data display */
+        .data-grid {
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: border-color 0.2s;
+        }
+
+        .data-grid:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .data-label {
+            color: #9baac8;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .data-value {
+            color: #fff;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .btn-copy-single {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-copy-single:hover {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .avatar-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .avatar-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid rgba(16, 185, 129, 0.5);
+            object-fit: cover;
+            display: none;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(20, 25, 35, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 16px;
+            z-index: 10;
+            display: none;
+            color: #10b981;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(16, 185, 129, 0.3);
+            border-radius: 50%;
+            border-top-color: #10b981;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #9baac8;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header/Nav -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon">
+                <i data-feather="home"></i>
+            </span>
+            KAZI TOOLS PRO
+        </a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Toggle navigation">
+            <i data-feather="menu"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">MENU</span>
+            <button class="close-sidebar" id="close-sidebar" aria-label="Close menu">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">
+                <i data-feather="home"></i> Home
+            </a>
+            <a href="cardgen.html" class="nav-item">
+                <i data-feather="credit-card"></i> Card Gen
+            </a>
+            <a href="fake-address.html" class="nav-item active">
+                <i data-feather="map-pin"></i> Fake Address
+            </a>
+            <a href="password.html" class="nav-item">
+                <i data-feather="key"></i> Password Gen
+            </a>
+            <a href="prefix.html" class="nav-item">
+                <i data-feather="hash"></i> Suffix & Prefix
+            </a>
+            <a href="bin.html" class="nav-item">
+                <i data-feather="search"></i> BIN Checker
+            </a>
+            <a href="tempmail.html" class="nav-item">
+                <i data-feather="mail"></i> Temp Mail
+            </a>
+            <a href="json.html" class="nav-item">
+                <i data-feather="code"></i> JSON Formatter
+            </a>
+            <a href="base64.html" class="nav-item">
+                <i data-feather="file-text"></i> Base64
+            </a>
+            <a href="hash.html" class="nav-item">
+                <i data-feather="lock"></i> Hash Gen
+            </a>
+            <a href="url.html" class="nav-item">
+                <i data-feather="link"></i> URL Tools
+            </a>
+            <a href="short.html" class="nav-item">
+                <i data-feather="scissors"></i> URL Shortener
+            </a>
+            <a href="ip.html" class="nav-item">
+                <i data-feather="globe"></i> IP Lookup
+            </a>
+            <a href="regex.html" class="nav-item">
+                <i data-feather="terminal"></i> Regex Tester
+            </a>
+            <a href="lorem.html" class="nav-item">
+                <i data-feather="type"></i> Lorem Ipsum
+            </a>
+        </nav>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="sidebar-overlay"></div>
+
+    <div class="page-wrapper">
+        <div class="container">
+
+            <div class="tool-header">
+                <h1 class="tool-title">
+                    <span class="icon-box"><i data-feather="map-pin"></i></span>
+                    Fake Address Generator
+                </h1>
+                <p class="tool-desc">Generate realistic random user data including names, addresses, phone numbers
+                    across global regions.</p>
+            </div>
+
+            <div class="panel-container">
+                <!-- Control Panel -->
+                <div class="control-panel">
+                    <div class="form-group">
+                        <label class="form-label">Geography</label>
+                        <div class="custom-select-wrapper" id="countrySelectWrapper">
+                            <div class="custom-select-trigger" id="countrySelectTrigger">
+                                <span id="countrySelectLabel">Any Country / Random</span>
+                                <i data-feather="chevron-down"></i>
+                            </div>
+                            <div class="custom-select-options" id="countrySelectOptions">
+                                <input type="text" class="custom-select-search" id="countrySearchInput"
+                                    placeholder="Search country...">
+                                <div class="custom-select-list" id="countrySelectList">
+                                    <div class="custom-option selected" data-value="all"
+                                        data-name="Any Country / Random">Any Country / Random</div>
+                                    <div class="custom-option" style="color:#efa;" data-value="all">Loading 300+
+                                        countries...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="countrySelect" value="all">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select id="genderSelect" class="input-control">
+                            <option value="all">Any</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-primary" id="generateBtn" onclick="generateIdentity()">
+                        <i data-feather="zap"></i> GENERATE IDENTITY
+                    </button>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="output-panel" style="position: relative;">
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="spinner"></div>
+                        <div>Fetching Data...</div>
+                    </div>
+
+                    <div class="output-header">
+                        <div class="output-title">>> GENERATED PROFILE</div>
+                    </div>
+
+                    <div class="avatar-container">
+                        <img id="profileAvatar" class="avatar-img" src="" alt="Profile Image">
+                    </div>
+
+                    <div class="results-container" id="outputContainer">
+                        <div class="empty-state">
+                            <i data-feather="inbox"
+                                style="width: 48px; height: 48px; opacity: 0.5; margin-bottom: 10px;"></i><br>
+                            Click generate to create a new profile.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Alert (Reusable) -->
+    <div id="customAlert" class="custom-alert" style="display: none;">
+        <div class="alert-content">
+            <span id="alertTitle" class="alert-title">>> SUCCESS &lt;&lt;</span>
+            <span id="alertMsg">Operation completed.</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        const API_SUPPORTED = ['AU', 'BR', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI', 'FR', 'GB', 'IE', 'IN', 'IR', 'MX', 'NL', 'NO', 'NZ', 'RS', 'TR', 'UA', 'US'];
+        let allCountries = [];
+        let selectedCountryName = 'Any Country / Random';
+        let selectedCountryCode = 'all';
+
+        // Custom Dropdown Logic
+        document.addEventListener('DOMContentLoaded', async () => {
+            const wrapper = document.getElementById('countrySelectWrapper');
+            const trigger = document.getElementById('countrySelectTrigger');
+            const optionsDiv = document.getElementById('countrySelectOptions');
+            const searchInput = document.getElementById('countrySearchInput');
+            const list = document.getElementById('countrySelectList');
+            const label = document.getElementById('countrySelectLabel');
+            const hiddenInput = document.getElementById('countrySelect');
+
+            // Fetch countries from json api
+            try {
+                const res = await fetch('https://flagcdn.com/en/codes.json');
+                const data = await res.json();
+
+                // Convert to array and filter out regions like us-ak
+                allCountries = Object.entries(data)
+                    .filter(([code]) => !code.includes('-'))
+                    .map(([code, name]) => ({ code: code.toUpperCase(), name }));
+
+                // Sort alphabetically
+                allCountries.sort((a, b) => a.name.localeCompare(b.name));
+
+                renderOptions(allCountries);
+            } catch (err) {
+                console.error('Failed to load countries:', err);
+                list.innerHTML = '<div class="custom-option" style="color:red;">Error loading countries. Using fallbacks.</div>';
+            }
+
+            function renderOptions(countriesArray) {
+                list.innerHTML = `<div class="custom-option ${hiddenInput.value === 'all' ? 'selected' : ''}" data-value="all" data-name="Any Country / Random">Any Country / Random</div>`;
+                countriesArray.forEach(c => {
+                    const isSelected = hiddenInput.value === c.code;
+                    list.innerHTML += `<div class="custom-option ${isSelected ? 'selected' : ''}" data-value="${c.code}" data-name="${c.name}">${c.name}</div>`;
+                });
+            }
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                wrapper.classList.toggle('open');
+                if (wrapper.classList.contains('open')) {
+                    searchInput.focus();
+                }
+            });
+
+            optionsDiv.addEventListener('click', (e) => {
+                e.stopPropagation(); // prevent closing when clicking inside
+            });
+
+            document.addEventListener('click', () => {
+                wrapper.classList.remove('open');
+            });
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const filtered = allCountries.filter(c => c.name.toLowerCase().includes(query));
+                renderOptions(filtered);
+            });
+
+            list.addEventListener('click', (e) => {
+                if (e.target.classList.contains('custom-option')) {
+                    const code = e.target.getAttribute('data-value');
+                    const name = e.target.getAttribute('data-name');
+
+                    hiddenInput.value = code;
+                    selectedCountryCode = code;
+                    selectedCountryName = name;
+
+                    label.textContent = name;
+                    wrapper.classList.remove('open');
+
+                    // Update selected visual
+                    Array.from(list.children).forEach(c => c.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+        });
+
+        async function generateIdentity() {
+            const country = document.getElementById('countrySelect').value;
+            const gender = document.getElementById('genderSelect').value;
+            const outputContainer = document.getElementById('outputContainer');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const generateBtn = document.getElementById('generateBtn');
+            const avatarImg = document.getElementById('profileAvatar');
+
+            let apiUrl = 'https://randomuser.me/api/';
+            let params = [];
+
+            // If selected country is supported by the API natively
+            let isNativeSupported = country !== 'all' && API_SUPPORTED.includes(country);
+
+            if (isNativeSupported) {
+                params.push(`nat=${country}`);
+            }
+            if (gender !== 'all') {
+                params.push(`gender=${gender}`);
+            }
+
+            if (params.length > 0) {
+                apiUrl += '?' + params.join('&');
+            }
+
+            loadingOverlay.style.display = 'flex';
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('API Request Failed');
+                const data = await response.json();
+                let user = data.results[0];
+
+                // Override country if we forced a non-supported country
+                if (country !== 'all' && !isNativeSupported) {
+                    user.location.country = selectedCountryName;
+                    user.nat = selectedCountryCode;
+
+                    try {
+                        // Fetch real states/cities for this specific country to avoid mismatched data
+                        loadingOverlay.innerHTML = '<div class="spinner"></div><div>Mapping Regional Data...</div>';
+                        const geoRes = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ country: selectedCountryName })
+                        });
+
+                        if (geoRes.ok) {
+                            const geoData = await geoRes.json();
+                            if (geoData.data && geoData.data.length > 0) {
+                                // Pick a random state
+                                const randomStateObj = geoData.data[Math.floor(Math.random() * geoData.data.length)];
+                                user.location.state = randomStateObj.name;
+
+                                // Pick a random city from that state
+                                if (randomStateObj.cities && randomStateObj.cities.length > 0) {
+                                    user.location.city = randomStateObj.cities[Math.floor(Math.random() * randomStateObj.cities.length)];
+                                } else {
+                                    // Fallback if no cities in the state
+                                    user.location.city = randomStateObj.name;
+                                }
+
+                                // Generate a somewhat believable random zip code based on country
+                                let codeLen = selectedCountryCode === 'BD' ? 4 : 5;
+                                let min = Math.pow(10, codeLen - 1);
+                                let max = Math.pow(10, codeLen) - 1;
+                                user.location.postcode = Math.floor(min + Math.random() * (max - min)).toString();
+                            }
+                        } else {
+                            // Fallback to basic cities API if state/cities fails (some small countries don't have states)
+                            const fallbackGeo = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ country: selectedCountryName })
+                            });
+                            if (fallbackGeo.ok) {
+                                const fbData = await fallbackGeo.json();
+                                if (fbData.data && fbData.data.length > 0) {
+                                    user.location.city = fbData.data[Math.floor(Math.random() * fbData.data.length)];
+                                    user.location.state = user.location.city; // Make state same as city
+
+                                    let codeLen = selectedCountryCode === 'BD' ? 4 : 5;
+                                    let min = Math.pow(10, codeLen - 1);
+                                    let max = Math.pow(10, codeLen) - 1;
+                                    user.location.postcode = Math.floor(min + Math.random() * (max - min)).toString();
+                                }
+                            }
+                        }
+
+                        // Also fetch dial code to format phone numbers correctly
+                        const dialRes = await fetch('https://countriesnow.space/api/v0.1/countries/codes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ country: selectedCountryName })
+                        });
+
+                        if (dialRes.ok) {
+                            const dialData = await dialRes.json();
+                            if (dialData.data && dialData.data.dial_code) {
+                                const dCode = dialData.data.dial_code;
+                                // Strip any existing dial codes and non-numeric chars from generated phones, add new code
+                                const rawPhone = user.phone.replace(/[^0-9]/g, '').slice(-8); // Keep last 8 digits
+                                const rawCell = user.cell.replace(/[^0-9]/g, '').slice(-8);
+                                user.phone = `${dCode} ${rawPhone.substring(0, 4)} ${rawPhone.substring(4)}`;
+                                user.cell = `${dCode} ${rawCell.substring(0, 4)} ${rawCell.substring(4)}`;
+                            }
+                        }
+
+                    } catch (geoErr) {
+                        console.warn("Geospatial fetch failed for overriding, falling back to basic data.", geoErr);
+                    }
+                }
+
+                renderProfile(user);
+
+                // Show avatar
+                avatarImg.src = user.picture.large;
+                avatarImg.style.display = 'block';
+
+            } catch (error) {
+                console.error(error);
+                showAlert("ERROR FETCHING DATA", true);
+                outputContainer.innerHTML = '<div class="empty-state" style="color:#ef4444;">Failed to fetch data. Please try again.</div>';
+                avatarImg.style.display = 'none';
+            } finally {
+                loadingOverlay.style.display = 'none';
+                generateBtn.disabled = false;
+                if (typeof feather !== 'undefined') feather.replace();
+            }
+        }
+
+        function renderProfile(user) {
+            const outputContainer = document.getElementById('outputContainer');
+
+            const fullName = `${user.name.title} ${user.name.first} ${user.name.last}`;
+            const fullAddress = `${user.location.street.number} ${user.location.street.name}`;
+            const city = user.location.city;
+            const state = user.location.state;
+            const country = user.location.country;
+            const postcode = user.location.postcode;
+            const email = user.email;
+            const username = user.login.username;
+            const password = user.login.password;
+            const phone = user.phone;
+            const cell = user.cell;
+            const dob = new Date(user.dob.date).toLocaleDateString();
+            const age = user.dob.age;
+            const nat = user.nat;
+
+            const fields = [
+                { label: 'Full Name', value: fullName },
+                { label: 'Gender', value: user.gender.charAt(0).toUpperCase() + user.gender.slice(1) },
+                { label: 'Date of Birth', value: dob + ` (Age: ${age})` },
+                { label: 'Street', value: fullAddress },
+                { label: 'City', value: city },
+                { label: 'State/Region', value: state },
+                { label: 'Postal Code', value: postcode },
+                { label: 'Country', value: country },
+                { label: 'Nationality', value: nat },
+                { label: 'Email Address', value: email },
+                { label: 'Phone', value: phone },
+                { label: 'Cell/Mobile', value: cell },
+                { label: 'Username', value: username },
+                { label: 'Password', value: password }
+            ];
+
+            let html = '';
+            fields.forEach(f => {
+                html += `
+                <div class="data-grid">
+                    <div class="data-label">${f.label}</div>
+                    <div class="data-value" id="val-${f.label.replace(/[^a-zA-Z]/g, '')}">${f.value}</div>
+                    <button class="btn-copy-single" onclick="copyField(this, '${f.value.toString().replace(/'/g, "\\'")}')" aria-label="Copy ${f.label}">
+                        <i data-feather="copy" style="width: 12px; height: 12px;"></i>
+                    </button>
+                </div>`;
+            });
+
+            outputContainer.innerHTML = html;
+            if (typeof feather !== 'undefined') feather.replace();
+        }
+
+        function copyField(btnElement, text) {
+            // Check for clipboard support
+            if (window.copyTextToClipboard) {
+                window.copyTextToClipboard(text, true);
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+            }
+
+            // Visual feedback on the button
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML = '<i data-feather="check" style="width: 12px; height: 12px;"></i>';
+            if (typeof feather !== 'undefined') feather.replace();
+
+            setTimeout(() => {
+                btnElement.innerHTML = originalHtml;
+                if (typeof feather !== 'undefined') feather.replace();
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>
