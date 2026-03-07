@@ -1,7 +1,8 @@
 // Configuration
 const APIS = {
     'mail.tm': 'https://api.mail.tm',
-    'mail.gw': 'https://api.mail.gw'
+    'mail.gw': 'https://api.mail.gw',
+    'tempmaillab': '/api/tempmaillab'
 };
 const POLL_INTERVAL = 10000; // 10 seconds
 
@@ -153,10 +154,18 @@ async function fetchDomains() {
                 const response = await fetch(`${APIS[apiKey]}/domains`);
                 if (response.ok) {
                     const data = await response.json();
-                    const activeDomains = data['hydra:member'].filter(d => d.isActive).map(d => ({
-                        domain: d.domain,
-                        api: apiKey
-                    }));
+                    let activeDomains = [];
+                    if (apiKey === 'tempmaillab') {
+                        activeDomains = (data.domains || []).map(d => ({
+                            domain: d,
+                            api: apiKey
+                        }));
+                    } else {
+                        activeDomains = (data['hydra:member'] || []).filter(d => d.isActive).map(d => ({
+                            domain: d.domain,
+                            api: apiKey
+                        }));
+                    }
                     availableDomains.push(...activeDomains);
                 }
             } catch (err) {
@@ -276,91 +285,114 @@ async function generateNewEmail() {
         let customPassword = els.customPasswordInput ? els.customPasswordInput.value.trim() : ""; const password = customPassword ? customPassword : Math.random().toString(36).substring(2, 15);
 
         // 3. Create account
-        let createRes = await fetch(`${APIS[targetApi]}/accounts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address, password })
-        });
-
-        // Auto-Retry logic for 429 specific to Auto-Select
-        if (!createRes.ok && createRes.status === 429 && isAutoSelect) {
-            console.warn(`Rate limit hit on ${targetApi}. Falling back to alternate API...`);
-
-            // Swap to the other API
-            const otherApi = Object.keys(APIS).find(api => api !== targetApi) || targetApi;
-
-            if (otherApi !== targetApi) {
-                targetApi = otherApi;
-                lastAutoApi = targetApi; // Update the round-robin tracker
-
-                // Pick a new domain from the new target
-                const altDomains = availableDomains.filter(d => d.api === targetApi);
-                if (altDomains.length > 0) {
-                    address = `${selectedPrefix}@${altDomains[Math.floor(Math.random() * altDomains.length)].domain}`;
-
-                    // Retry fetch exactly once silently
-                    createRes = await fetch(`${APIS[targetApi]}/accounts`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ address, password })
-                    });
-                }
-            }
-        }
-
         let isExistingAccount = false;
-        if (!createRes.ok) {
-            if (createRes.status === 429) {
-                throw new Error('Too many requests (rate limit). Please wait a moment.');
+        let accountData = null;
+        let createRes = null;
+
+        if (targetApi === 'tempmaillab') {
+            createRes = await fetch(`${APIS[targetApi]}/change_email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ localPart: selectedPrefix, domain: selectedDomain, random: false })
+            });
+
+            if (!createRes.ok) {
+                if (createRes.status === 429) {
+                    throw new Error('Too many requests (rate limit). Please wait a moment.');
+                }
+                throw new Error('Failed to create account on tempmaillab. Domain might be full.');
             }
-            const errData = await createRes.json();
-            if (createRes.status === 422 && errData['hydra:description'] && errData['hydra:description'].includes('already')) {
-                if (customPassword) {
-                    isExistingAccount = true;
+
+            const data = await createRes.json();
+            currentEmail = data.email || address;
+            currentToken = data.token;
+            currentAccountId = 'tempmaillab_' + Date.now();
+            currentApi = targetApi;
+        } else {
+            createRes = await fetch(`${APIS[targetApi]}/accounts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address, password })
+            });
+
+            // Auto-Retry logic for 429 specific to Auto-Select
+            if (!createRes.ok && createRes.status === 429 && isAutoSelect) {
+                console.warn(`Rate limit hit on ${targetApi}. Falling back to alternate API...`);
+
+                // Swap to the other API
+                const otherApi = Object.keys(APIS).find(api => api !== targetApi) || targetApi;
+
+                if (otherApi !== targetApi) {
+                    targetApi = otherApi;
+                    lastAutoApi = targetApi; // Update the round-robin tracker
+
+                    // Pick a new domain from the new target
+                    const altDomains = availableDomains.filter(d => d.api === targetApi);
+                    if (altDomains.length > 0) {
+                        address = `${selectedPrefix}@${altDomains[Math.floor(Math.random() * altDomains.length)].domain}`;
+
+                        // Retry fetch exactly once silently
+                        createRes = await fetch(`${APIS[targetApi]}/accounts`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ address, password })
+                        });
+                    }
+                }
+            }
+
+            if (!createRes.ok) {
+                if (createRes.status === 429) {
+                    throw new Error('Too many requests (rate limit). Please wait a moment.');
+                }
+                const errData = await createRes.json();
+                if (createRes.status === 422 && errData['hydra:description'] && errData['hydra:description'].includes('already')) {
+                    if (customPassword) {
+                        isExistingAccount = true;
+                    } else {
+                        throw new Error('This exact email is already taken. Try a different name.');
+                    }
                 } else {
-                    throw new Error('This exact email is already taken. Try a different name.');
+                    throw new Error('Failed to create account');
+                }
+            }
+            if (!isExistingAccount) {
+                accountData = await createRes.json();
+            }
+
+            // 4. Login to get token
+            const tokenRes = await fetch(`${APIS[targetApi]}/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address, password })
+            });
+            if (!tokenRes.ok) {
+                if (isExistingAccount) {
+                    throw new Error('Incorrect password or email combination.');
+                } else {
+                    throw new Error('Failed to get token');
+                }
+            }
+            const tokenData = await tokenRes.json();
+
+            // 5. Save state
+            currentEmail = address;
+            currentToken = tokenData.token;
+            if (isExistingAccount) {
+                const meRes = await fetch(`${APIS[targetApi]}/me`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    currentAccountId = meData.id;
+                } else {
+                    currentAccountId = 'unknown'; // fallback
                 }
             } else {
-                throw new Error('Failed to create account');
+                currentAccountId = accountData.id;
             }
+            currentApi = targetApi;
         }
-        let accountData = null;
-        if (!isExistingAccount) {
-            accountData = await createRes.json();
-        }
-
-        // 4. Login to get token
-        const tokenRes = await fetch(`${APIS[targetApi]}/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address, password })
-        });
-        if (!tokenRes.ok) {
-            if (isExistingAccount) {
-                throw new Error('Incorrect password or email combination.');
-            } else {
-                throw new Error('Failed to get token');
-            }
-        }
-        const tokenData = await tokenRes.json();
-
-        // 5. Save state
-        currentEmail = address;
-        currentToken = tokenData.token;
-        if (isExistingAccount) {
-            const meRes = await fetch(`${APIS[targetApi]}/me`, {
-                headers: { 'Authorization': `Bearer ${currentToken}` }
-            });
-            if (meRes.ok) {
-                const meData = await meRes.json();
-                currentAccountId = meData.id;
-            } else {
-                currentAccountId = 'unknown'; // fallback
-            }
-        } else {
-            currentAccountId = accountData.id;
-        }
-        currentApi = targetApi;
 
         localStorage.setItem('dropmail_token', currentToken);
         localStorage.setItem('dropmail_address', currentEmail);
@@ -406,7 +438,8 @@ async function fetchMessages() {
     }
 
     try {
-        const response = await fetch(`${APIS[currentApi]}/messages`, {
+        const fetchUrl = currentApi === 'tempmaillab' ? `${APIS[currentApi]}/inbox` : `${APIS[currentApi]}/messages`;
+        const response = await fetch(fetchUrl, {
             headers: { 'Authorization': `Bearer ${currentToken}` }
         });
 
@@ -422,7 +455,25 @@ async function fetchMessages() {
 
         if (!response.ok) throw new Error('API Error');
         const data = await response.json();
-        const messages = data['hydra:member'] || [];
+        let messages = [];
+
+        if (currentApi === 'tempmaillab') {
+            const rawMessages = Array.isArray(data) ? data : (data.messages || []);
+            messages = rawMessages.map((m, i) => {
+                const htmlContent = m.body_html || m.html;
+                const textContent = m.body_text || m.text || m.body || '';
+                return {
+                    id: m.id || m.uid || `msg-${Date.now()}-${i}`,
+                    from: { address: m.sender || m.from || 'Unknown', name: '' },
+                    subject: m.subject || '(No Subject)',
+                    createdAt: m.date || new Date().toISOString(),
+                    text: textContent,
+                    html: htmlContent ? [htmlContent] : [textContent]
+                };
+            });
+        } else {
+            messages = data['hydra:member'] || [];
+        }
 
         // Check if there are new messages
         if (messages.length > emails.length && emails.length > 0) {
@@ -438,6 +489,11 @@ async function fetchMessages() {
 
 async function fetchMessageDetails(id) {
     if (!currentToken || !currentApi) return null;
+
+    if (currentApi === 'tempmaillab') {
+        const cachedMsg = emails.find(e => e.id === id);
+        return cachedMsg || null;
+    }
 
     try {
         const response = await fetch(`${APIS[currentApi]}/messages/${id}`, {
